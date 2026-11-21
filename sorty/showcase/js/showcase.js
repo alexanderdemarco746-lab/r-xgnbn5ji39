@@ -1445,3 +1445,15 @@
 
   init();
 })();
+
+/* ?autotour=1 starts the fast tour by itself once the page is ready (used to record the demo video). */
+(function () {
+  if (!/[?&]autotour=/.test(window.location.search)) return;
+  var tries = 0, iv = setInterval(function () {
+    var api = window.SortyShowcase;
+    if (++tries > 60) { clearInterval(iv); return; }
+    if (!api || !api.tour || !api.tourState || !api.state) return;
+    if (api.tourState().on) { clearInterval(iv); return; }
+    if (api.state().ready) api.tour();
+  }, 800);
+})();
