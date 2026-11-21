@@ -21,7 +21,7 @@ import numpy as np
 from mathutils import Vector
 from bpy_extras.object_utils import world_to_camera_view
 import sortylib as L
-import items_a, items_b, items_c  # noqa: F401  (register the frame builders)
+import items_a, items_b, items_c, items_d  # noqa: F401  (register the frame builders)
 
 OUT = os.path.normpath(os.path.join(HERE, '..', '..', 'showcase', 'assets', 'items'))
 TMP = os.path.join(HERE, 'preview', 'cut_tmp')
@@ -39,6 +39,7 @@ LABELS = {
     'opaque_bottle': 'Shampoo bottle', 'tied_bag': 'Tied plastic bag', 'cardboard_box_clean': 'Cardboard box',
     'plastic_fork': 'Plastic fork and knife', 'glass_bottle_empty': 'Glass bottle', 'spray_can': 'Spray paint can',
     'two_items_peel_bottle': 'Banana peel and bottle', 'smartphone': 'Smartphone',
+    'pizza_box_open_moldy': 'Moldy pizza box',
 }
 ORDER = list(LABELS)
 FLOORS = {'cold_cup_bottom_compostable': 0.62, 'cold_cup_bottom_pet': 0.62}   # keep the base markings legible over dark things
@@ -128,7 +129,9 @@ def studio(scene, clear, lowkey=False):
             f.visible_camera = False
 
 
-def item_points(objs, limit=7000):
+def item_points(objs, per_obj=90):
+    """World-space sample points of the item: for every object its extreme vertices along each axis plus an even
+    subsample (so huge bead meshes cannot crowd out the few corner vertices of a box)."""
     dg = bpy.context.evaluated_depsgraph_get()
     pts = []
     for ob in objs:
@@ -143,12 +146,13 @@ def item_points(objs, limit=7000):
         me.vertices.foreach_get('co', co)
         M = np.array(oe.matrix_world, dtype=np.float32)
         co = co.reshape(-1, 3) @ M[:3, :3].T + M[:3, 3]
-        pts.append(co)
+        idx = set(np.linspace(0, len(co) - 1, min(len(co), per_obj)).astype(int).tolist())
+        for ax in range(3):
+            idx.add(int(co[:, ax].argmin()))
+            idx.add(int(co[:, ax].argmax()))
+        pts.append(co[sorted(idx)])
         oe.to_mesh_clear()
-    allp = np.concatenate(pts)
-    if len(allp) > limit:
-        allp = allp[::int(math.ceil(len(allp) / limit))]
-    return [Vector(p) for p in allp]
+    return [Vector(p) for p in np.concatenate(pts)]
 
 
 def fit_camera(scene, cam, pts, elev, azim):

@@ -407,6 +407,13 @@ class Brain:
             else:
                 spoken.append(phrases.cap(tr["single"].format(bin=phrase)))
 
+        # Two parts that go to the same bin are one instruction: say the bin once.
+        same_bin = many and all(it["bin"] in self.bins for it in items) and len({it["bin"] for it in items}) == 1
+        if same_bin:
+            phrase = phrases.bin_phrase(self.bins[items[0]["bin"]], sess.lang)
+            preps = [it["prep"] for it in items if it["prep"]]
+            spoken = [tr["first_then"].format(prep=phrases.lower_first(preps[0]), bin=phrase)] if preps                 else [phrases.cap(tr["single"].format(bin=phrase))]
+
         reason = phrases.sentence(phrases.cap(str(args.get("reason", "")).strip()))
         say = " ".join(spoken)
         if reason and len((say + " " + reason).split()) <= 26:

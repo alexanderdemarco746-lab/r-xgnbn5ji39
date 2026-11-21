@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "when": "2026-11-21 16:24",
+    "model": "claude-opus-5-5",
+    "effort": "low",
+    "orchestrator": "classic",
+    "station": "3bin",
+    "cost_usd": 0.0645,
+    "usage": {
+      "calls": 3,
+      "input": 3565,
+      "output": 559,
+      "cache_read": 6079,
+      "cache_write": 7563
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "pizza_box_moldy",
+      "title": "Pizza box, moldy leftovers inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "show",
+          "say": "Open the box and show the inside.",
+          "action": "open_show_inside"
+        },
+        {
+          "person": "(shows pizza_box_open_moldy.jpg)"
+        },
+        {
+          "sorty": "verdict",
+          "say": "Moldy pizza box: green bin, in the middle. Moldy pizza slices: green bin, in the middle. Greasy or moldy pizza boxes and food go in compost. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 1,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "show",
+          "action": "open_show_inside",
+          "say": "Open the box and show the inside.",
+          "item_seen": "Pizza box",
+          "then_check": "contamination"
+        },
+        {
+          "event": "frame",
+          "unchanged": false
+        },
+        {
+          "event": "specialist",
+          "check": "contamination",
+          "result": {
+            "surface_inspected": "Inside base of the open pizza box (plus inner lid)",
+            "surface_visible": "yes",
+            "food_or_grease_present": "yes",
+            "severity": "heavy",
+            "coverage_percent": 70,
+            "liquid_visible": "no",
+            "evidence": "The box is open and its inside is fully visible: a large soaked-in grease stain covers most of the base, two crust pieces and scattered crumbs sit on it, and fuzzy white and blue-green mold grows on the pizza slices and directly on the cardboard, with further grease staining on the inner lid.",
+            "confidence": "high"
+          }
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Moldy pizza box",
+              "bin": "compost",
+              "prep": "",
+              "dest": ""
+            },
+            {
+              "item": "Moldy pizza slices",
+              "bin": "compost",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Greasy or moldy pizza boxes and food go in compost.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 8.4,
+      "wall_seconds": 8.4,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "Moldy pizza box: green bin, in the middle. Moldy pizza slices: green bin, in the middle. Greasy or moldy pizza boxes and food go in compost. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "compost",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Moldy pizza box",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          },
+          {
+            "kind": "bin",
+            "item": "Moldy pizza slices",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          }
+        ],
+        "reason": "Greasy or moldy pizza boxes and food go in compost.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    }
+  ],
+  "baseline": null
+}

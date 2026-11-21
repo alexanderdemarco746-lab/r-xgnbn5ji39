@@ -31,6 +31,16 @@
                "verdict": {"items": [{"item": "Pizza box and slices", "bin": "compost", "prep": ""}], "reason": "Food and greasy cardboard both go in compost."}}
     },
     {
+      "id": "pizza_box_moldy", "title": "Pizza box, moldy leftovers inside", "group": "Look again",
+      "frames": {"initial": "pizza_box_closed.jpg", "open_show_inside": "pizza_box_open_moldy.jpg"},
+      "person": {"facts": "You are holding an old pizza box you found in your room. You have not looked inside for days and do not know what state it is in. You are happy to open it if asked."},
+      "expect": {"bins": ["compost"], "only_bins": ["compost"], "needs": "info", "max_person_turns": 2},
+      "expect_2bin": {"bins": ["landfill"], "needs": "info", "max_person_turns": 2},
+      "why": "Mold on old food and cardboard: never recycling, even though the box looks fine from outside.",
+      "mock": {"show": {"action": "open_show_inside", "say": "Open the box and show me inside.", "because": "I can't see the inside.", "item_seen": "Pizza box"},
+               "verdict": {"items": [{"item": "Moldy pizza box", "bin": "compost", "prep": ""}], "reason": "Moldy food and cardboard go in compost."}}
+    },
+    {
       "id": "clamshell_food", "title": "Foam takeout box with food inside", "group": "Look again",
       "frames": {"initial": "clamshell_closed.jpg", "open_show_inside": "clamshell_open_food.jpg"},
       "person": {"facts": "You are holding a white foam takeout box. Inside there is leftover rice and fries that you do not want. You are happy to open it if asked."},

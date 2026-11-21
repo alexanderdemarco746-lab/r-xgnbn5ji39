@@ -173,5 +173,12 @@
     "h": 649,
     "height_m": 0.108,
     "label": "Smartphone"
+  },
+  "pizza_box_open_moldy": {
+    "file": "pizza_box_open_moldy.png",
+    "w": 525,
+    "h": 654,
+    "height_m": 0.6237,
+    "label": "Moldy pizza box"
   }
 }
