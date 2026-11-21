@@ -22,7 +22,7 @@ The guide's own elements are covered: introduce the project (Part 1, first sente
 
 ## The script
 
-**About 380 spoken words.** About 284 of them are outside the demo: about 2 minutes 2 seconds at a calm 140 words a minute. The live demo of three items takes about 56 seconds, and the speaker talks over the waiting. Total: about **2:58**, which leaves no slack: use the first cut below if you start late. At a slow pace it runs past 3:00, so rehearse once with a stopwatch and use the cuts under "If you are behind".
+**About 380 spoken words.** About 284 of them are outside the demo: about 2 minutes 2 seconds at a calm 140 words a minute. The live demo (the fast tour, then one pizza box) takes about 55 seconds, and the speaker talks over the waiting. Total: about **2:58**, which leaves no slack: use the first cut below if you start late. At a slow pace it runs past 3:00, so rehearse once with a stopwatch and use the cuts under "If you are behind".
 
 The 56 seconds is an estimate from today's measured AI times plus the animation. The page has not been timed with these three items.
 
@@ -58,35 +58,25 @@ Lines starting with `>` are spoken. Lines in [brackets] are what happens on scre
 
 ### Showcase page on screen: live demo
 
-[Click the card "AA batteries".]
+[Press "Play fast tour". A line of eight people forms. The first is in a hurry and walks straight at the blue bin with batteries.]
 
-> Live now. Batteries: the common guess is the trash.
+> Live now: a line of people. The first is in a hurry and just throws batteries at the recycling.
 
-[The screen turns red. Sorty: "Stop!", then where batteries go instead.]
+[The scene turns red: "STOP", with the time it took. The line moves on: bottle, plastic bag (red again), banana peel, vape (red again), box, chip bag, glass bottle. The stopwatch on the stage counts. In today's one timed run: 8 people in 30.9 seconds.]
 
-> The fast model caught it at once.
+> The alert agent stopped him in about a second. Everyone else gets a bin in two or three seconds. An AI assistant wrote the code from our instructions.
+
+[When the stopwatch stops, read its numbers out instead of these if they differ.]
+
+> Eight people, about thirty seconds.
 
 [Click "Pizza box, greasy inside". Sorty: "Open the box and show the inside." Let the judge hear it.]
 
-> Now a closed pizza box. The careful model, Claude Opus 5.5, asks to look inside, then takes a closer second look.
+> Now a closed pizza box. The orchestrator asks to look inside, then calls the inspector agent for a closer look.
 
-[The box opens. A wait of 6 to 9 seconds.]
+[The box opens. A wait of 6 to 9 seconds. Sorty: "Green bin, in the middle." The green bin lights up. Stay quiet and let Sorty speak.]
 
-> An AI assistant wrote the code from our instructions.
-
-[Sorty: "Green bin, in the middle." The green bin lights up. Stay quiet and let Sorty speak.]
-
-[Click "Pizza box, clean inside". The same closed box comes up.]
-
-> The same closed box, clean inside.
-
-[While Sorty asks again and looks:]
-
-> Under the hood, the code holds the limits: three requests, real bins only, a spending cap, and "check the labels" if the AI fails. Bin rules are one file per site.
-
-[Sorty: "Blue bin, on your left." The blue bin lights up.]
-
-> No grease: blue bin. One picture could not tell these two apart.
+> Grease inside: green bin. One picture could not have told.
 
 ### Slide 5 on screen: Potential benefits
 
@@ -109,8 +99,9 @@ The fast alert was measured on its own at 4:46 PM, and at 4:50 PM it was checked
 ### If you are behind
 
 - **First cut:** leave out "People also guess wrong on everyday items."
-- **At 2:15 on your clock**, go to slide 5 even if the clean box has not finished.
-- **If the first two items took more than 45 seconds**, skip the clean box and say: "The same closed box with a clean inside goes in the blue bin. It did in today's test."
+- **At 2:15 on your clock**, go to slide 5 even if the pizza box has not finished.
+- **If the fast tour took more than 40 seconds**, skip the pizza box and say: "A closed pizza box makes Sorty ask to look inside: greasy goes in the green bin, clean in the blue. It did in today's test."
+- **If the tour will not start**, click the card "AA batteries" for the red alert, then "Pizza box, greasy inside".
 - **If an item comes out wrong**, say so: "That one is wrong." Then carry on.
 
 ### If asked about the orchestrator

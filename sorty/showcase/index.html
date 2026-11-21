@@ -32,7 +32,7 @@
         <input type="checkbox" id="optPractice">
         <span>Practice mode</span>
       </label>
-      <button id="btnTour" class="btn" type="button">Play tour</button>
+      <button id="btnTour" class="btn" type="button" title="A line of people, one item each, with a stopwatch. Two of them are in a hurry and do not stop.">Play fast tour</button>
       <button id="btnCam" class="btn" type="button" title="Hold a real object up to your webcam">Use my camera</button>
       <label class="voice" title="The voice Sorty speaks with. The list comes from this browser.">
         <span>Voice</span>
@@ -64,6 +64,9 @@
             <div class="mini-verdict"><b id="miniWord"></b><span id="miniArrow"></span></div>
             <div class="mini-alert">!</div>
           </div>
+
+          <!-- fast tour: the people waiting in line, behind the one at the camera -->
+          <div id="queue" class="queue" aria-hidden="true"></div>
 
           <div id="person" class="person off">
             <img id="poseWalk" class="pose" alt="">
@@ -98,6 +101,13 @@
 
           <div id="saySorty" class="say by-sorty" hidden></div>
           <div id="sayPerson" class="say by-person" hidden></div>
+
+          <!-- fast tour: the stopwatch (real elapsed time: stepping up, the scan, the answer and the throw) -->
+          <div id="tourClock" class="tour-clock" hidden>
+            <span class="cell"><small>People served</small><b id="tcServed">0</b></span>
+            <span class="cell"><small>Total</small><b id="tcTotal">0.0 s</b></span>
+            <span class="cell"><small>Average</small><b id="tcAvg">-</b></span>
+          </div>
         </div>
         <div id="curtain">Loading the station…</div>
       </div>

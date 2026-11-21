@@ -310,3 +310,20 @@ body.cam-on #camBox { max-height: 30vh; }
 @media (prefers-reduced-motion: reduce) {
   #guessArc, #alarm, .stop-chip, .versus, .badge.pop, .guess-badge.wrong { animation: none; }
 }
+
+/* ---------- fast tour: a line of people behind the one at the camera, and a stopwatch ---------- */
+.queue { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; isolation: isolate; }
+.queue .qp { position: absolute; left: 0; top: 0; width: 100%; height: 100%; will-change: transform, opacity;
+  transition: transform .4s cubic-bezier(.3, .7, .3, 1), opacity .4s ease, filter .4s ease; }
+.queue .qp .body { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.queue .qp .thing { position: absolute; transform: translate(-50%, -50%); filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .25)); }
+.tour-clock { position: absolute; left: 1010px; top: 1262px; display: flex; gap: 0; border-radius: 30px; overflow: hidden;
+  background: rgba(13, 17, 23, .9); color: #fff; box-shadow: 0 18px 50px rgba(0, 0, 0, .3); border: 5px solid transparent; }
+.tour-clock[hidden] { display: none; }
+.tour-clock .cell { display: flex; flex-direction: column; padding: 18px 44px 20px; min-width: 300px; }
+.tour-clock .cell + .cell { border-left: 3px solid rgba(255, 255, 255, .16); }
+.tour-clock small { font-size: 27px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #8CC8FF; }
+.tour-clock b { font-size: 66px; line-height: 1.1; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tour-clock.done { border-color: #2DA44E; }
+.say.by-person.hurry { background: #FFF1D6; border: 6px solid #F5A524; }
+.say.by-person.hurry::after { border-top-color: #F5A524; }

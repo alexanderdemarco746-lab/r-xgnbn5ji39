@@ -11,11 +11,16 @@
     cfg: null, stage: null, base: '', W: 2560, H: 1440,
     scenarios: [], byId: {}, items: {}, bins: {},
     kiosk: null, kioskReady: false,
-    run: null, seq: 0, autoplay: true, sound: true, tour: null, live: false,
+    run: null, seq: 0, autoplay: true, sound: true, tour: null, live: false, leaveTok: 0,
     hasPoses: false, litOk: {}
   };
 
-  var TOUR = ['coffee_cup_liquid', 'cup_compostable', 'chip_bag', 'pizza_box_greasy', 'battery_aa'];   // items people get wrong lead the tour
+  /* The fast tour: eight people in a line, one item each, every item answered in one look. Items that wreck a whole
+     load and ordinary items take turns. Two people are in a hurry: they do not stop at the camera, they head straight
+     for the recycling bin, and the instant alert has to catch them on the way. */
+  var FAST_TOUR = ['battery_aa', 'clear_bottle_empty', 'plastic_bag', 'banana_peel', 'vape', 'cardboard_box_clean', 'chip_bag', 'glass_bottle_empty'];
+  var HURRY = ['battery_aa', 'plastic_bag'];
+  var QUEUE_SHOWN = 5, STEP_MS = 400, HURRY_DX = 300, HURRY_MS = 1500;
   var ORDER = ['pizza_box_greasy', 'pizza_box_clean', 'soda_can_liquid', 'soda_can_empty', 'clear_bottle_half_full',
     'clear_bottle_empty', 'cup_compostable', 'cup_pet', 'clamshell_food', 'coffee_cup_liquid', 'battery_aa',
     'spray_can_not_empty', 'spray_can_empty', 'chip_bag', 'banana_peel', 'greasy_napkin', 'two_items'];
@@ -256,7 +261,7 @@
     return play($('item'), [{ transform: 'translate(-50%,-50%) rotate(0)' }, { transform: 'translate(-50%,-50%) rotate(115deg)', offset: .3 },
       { transform: 'translate(-50%,-50%) rotate(115deg)', offset: .75 }, { transform: 'translate(-50%,-50%) rotate(0)' }], { duration: 1500, easing: 'ease-in-out' });
   }
-  function itemDrop(el, binId) {
+  function itemDrop(el, binId, ms) {
     var to = S.stage.bins[binId].opening, x0 = parseFloat(el.style.left), y0 = parseFloat(el.style.top);
     var dx = to[0] - x0, dy = to[1] - y0, lift = Math.max(180, Math.abs(dx) * 0.28);
     var base = 'translate(-50%,-50%) ';
@@ -266,7 +271,7 @@
       { transform: base + 'translate(' + dx * 0.5 + 'px,' + (Math.min(0, dy) * 0.5 - lift) + 'px) scale(.8) rotate(24deg)', opacity: 1, offset: .5, easing: 'cubic-bezier(.5,0,.8,.4)' },
       { transform: base + 'translate(' + dx + 'px,' + dy + 'px) scale(' + end + ') rotate(52deg)', opacity: 1, offset: .93 },
       { transform: base + 'translate(' + dx + 'px,' + (dy + 26) + 'px) scale(' + end * 0.7 + ') rotate(60deg)', opacity: 0 }
-    ], { duration: 950, fill: 'forwards' }).then(function () {
+    ], { duration: ms || 950, fill: 'forwards' }).then(function () {
       el.hidden = true; clearAnim(el);
       var r = $('ripple'), color = S.bins[binId].color === '#24292F' ? '#C9D4E3' : S.bins[binId].color;
       r.style.left = to[0] + 'px'; r.style.top = to[1] + 'px'; r.style.setProperty('--ripc', color);
@@ -362,6 +367,7 @@
   function resetStage() {
     ['person', 'item', 'item2'].forEach(function (id) { clearAnim($(id)); });
     $('person').classList.add('off'); pose('idle');
+    $('person').style.transform = ''; $('sayPerson').classList.remove('hurry');   // left by someone in a hurry (fast tour)
     $('item').hidden = true; $('item2').hidden = true; $('item').style.transition = '';
     beam(false); lit(null); mini('idle'); camScan(false);
     say('sorty', ''); say('person', '');
@@ -396,11 +402,13 @@
     var api = w.Sorty.api, o = { start: api.startSession, reply: api.reply, ans: api.demoAnswer };
     api.startSession = function (body) {
       onStart(body);
-      return o.start(body).then(function (t) { onTurn(t); return t; }, function (e) { onFail(); throw e; });
+      var mine = S.run;                                 // an answer that arrives after its run was stopped is not shown
+      return o.start(body).then(function (t) { if (S.run === mine) onTurn(t); return t; }, function (e) { if (S.run === mine) onFail(); throw e; });
     };
     api.reply = function (sid, body) {
+      var mine = S.run;
       return Promise.resolve(beforeReply(body)).then(function () { return o.reply(sid, body); })
-        .then(function (t) { onTurn(t); return t; }, function (e) { onFail(); throw e; });
+        .then(function (t) { if (S.run === mine) onTurn(t); return t; }, function (e) { if (S.run === mine) onFail(); throw e; });
     };
     api.demoAnswer = function (b) {
       return o.ans(b).then(function (r) { onPersonSays(r && r.text); return r; });
@@ -539,6 +547,9 @@
     renderTrace(turn);
     if (!run || run.over || !turn) return;
     run.turns++;
+    if (run.fast && (turn.type === 'ask' || turn.type === 'show')) {      // the line cannot wait: the tour answers with silence,
+      mini('ask'); say('sorty', turn.say); return;                        // and Sorty then gives its safe answer (see tourSettle)
+    }
     var sub = turn.display && turn.display.sub ? ' (' + turn.display.sub.replace(/\.$/, '') + ')' : '';
     if (turn.type === 'ask') {
       mini('ask'); beam(false);
@@ -589,29 +600,42 @@
     else if (keep) why('Not trash', '', 'Sorty does not bin things that are not trash. ' + (v.reason || ''));
     else why('Answers', 'done', how + ' ' + (v.reason || ''));
     confVerdict(run, turn);                             // was the common guess a mistake? did the item threaten the whole load?
+    var fast = !!run.fast, dropMs = fast ? 460 : 0;     // fast tour: short holds, the line is waiting
+    if (fast) tourHalt(run, turn);                      // someone in a hurry stops where they are
+    if (fast && turn.alert) { clearTimeout(conf.alarmTimer); conf.alarmTimer = setTimeout(confAlarmOff, 1000); }
 
-    sleep(turn.alert ? 2600 : 1700).then(function () {  // an alarm plays out first
+    sleep(fast ? 800 : turn.alert ? 2600 : 1700).then(function () {  // an alarm plays out first
       if (!alive(run)) return;
-      if (!binSteps.length) { confCompare(run); return sleep(2200); }   // nothing goes in a bin: the person keeps it
-      var chain = prep.length ? (why('First', 'check', prep.map(function (p) { return p.text; }).join(', then ') + '. Then the bin.'), itemPour()) : Promise.resolve();
+      if (!binSteps.length) { if (fast) return; confCompare(run); return sleep(2200); }   // nothing goes in a bin: the person keeps it
+      var chain = Promise.resolve();
+      if (prep.length) {
+        why('First', 'check', prep.map(function (p) { return p.text; }).join(', then ') + '. Then the bin.');
+        if (!fast) chain = itemPour();
+      }
       return chain.then(function () {
         if (!alive(run)) return;
-        var jobs = [itemDrop($('item'), binSteps[0].bin)];
+        var jobs = [itemDrop($('item'), binSteps[0].bin, dropMs)];
         if (binSteps[1] && binSteps[1].bin !== binSteps[0].bin) {   // two parts, two bins
           setItem($('item2'), run.key, run.photo);
           lit(binSteps[1].bin);
-          jobs.push(sleep(380).then(function () { return itemDrop($('item2'), binSteps[1].bin); }));
+          jobs.push(sleep(fast ? 120 : 380).then(function () { return itemDrop($('item2'), binSteps[1].bin, dropMs); }));
         }
         return Promise.all(jobs);
-      }).then(function () { confCompare(run); return sleep(1500); });
+      }).then(function () { if (fast) return; confCompare(run); return sleep(1500); });
     }).then(function () {
       if (!alive(run)) return;
+      if (fast) {                                       // served: they leave while the next person is already stepping up,
+        tourServed(run);                                // and the answer stays on screen until that person is at the camera
+        personLeaveFast(!binSteps.length, run.dx || 0);
+        endRun(run);
+        return;
+      }
       say('sorty', '');
       return personExit(!binSteps.length);
     }).then(function () {
       if (!alive(run)) return;
       resetStage();
-      why('Ready', '', 'Pick another item, or press Play tour.');
+      why('Ready', '', 'Pick another item, or press Play fast tour.');
       endRun(run);
     });
   }
@@ -934,19 +958,192 @@
     var a = document.querySelector('.card.active'); if (a && a.scrollIntoView) a.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
-  function stopTour() { S.tour = null; $('btnTour').textContent = 'Play tour'; $('btnTour').classList.remove('on'); }
+  /* ---------------------------------------------------------------- fast tour: a line of people and a stopwatch */
+  /* Where the k-th person in line stands (1 = next), as an offset from the spot in front of the camera.
+     The line runs back toward the side people walk in from: each person a little smaller and dimmer. */
+  function qSlot(k) {
+    var dx = 0, dy = 0;
+    for (var j = 1; j <= k; j++) { var s = Math.pow(0.88, j); dx -= 150 * s + 20; dy -= 30 * s; }
+    return { dx: dx, dy: dy, s: Math.pow(0.88, k), dim: Math.max(0.5, 1 - 0.09 * k) };
+  }
+  function qPlace(el, k) {
+    var p = qSlot(k);
+    el.style.transform = 'translate(' + p.dx.toFixed(1) + 'px,' + p.dy.toFixed(1) + 'px) scale(' + p.s.toFixed(3) + ')';
+    el.style.opacity = k > QUEUE_SHOWN ? 0 : 1;        // further back than the visible line: they join as it moves
+    el.style.filter = 'brightness(' + p.dim.toFixed(2) + ')';
+    el.style.zIndex = String(20 - k);
+  }
+  function qBuild(ids) {
+    var box = $('queue'), feet = S.stage.person.feet, ppm = S.stage.person.px_per_m_at_hands || 480;
+    box.innerHTML = '';
+    return ids.map(function (id, i) {
+      var sc = S.byId[id], meta = S.items[keyOf(sc.frames.initial)];
+      var el = document.createElement('div'); el.className = 'qp';
+      el.style.transformOrigin = feet[0] + 'px ' + feet[1] + 'px';
+      var body = document.createElement('img'); body.className = 'body'; body.alt = ''; body.src = $('poseIdle').src; el.appendChild(body);
+      if (meta && S.hasPoses) {                         // carried low, in front of the body
+        var h = Math.max(110, Math.min(560, (meta.height_m || 0.25) * ppm)), w = h * (meta.w / meta.h);
+        if (w > 760) { h *= 760 / w; w = 760; }
+        var th = document.createElement('img'); th.className = 'thing'; th.alt = ''; th.src = 'assets/items/' + meta.file;
+        th.style.width = (w * 0.8) + 'px'; th.style.height = (h * 0.8) + 'px';
+        th.style.left = (feet[0] + 60) + 'px'; th.style.top = (S.stage.person.hands[1] + 0.34 * ppm) + 'px';
+        el.appendChild(th);
+      }
+      qPlace(el, i + 1);
+      box.appendChild(el);
+      return { id: id, el: el };
+    });
+  }
+  function frameB64(url) {                             // a test picture as the camera would send it
+    return fetch(url).then(function (r) { if (!r.ok) throw new Error('picture'); return r.blob(); }).then(function (b) {
+      return new Promise(function (res, rej) {
+        var fr = new FileReader();
+        fr.onload = function () { res(String(fr.result).split(',')[1] || ''); };
+        fr.onerror = rej; fr.readAsDataURL(b);
+      });
+    });
+  }
+  /* Sorty's real screen shows and speaks the answer. In the tour the spoken part is cut to its start
+     ("Stop! Not in these bins." or "Blue bin, on your left."), so speech never holds the line up. */
+  function tourSay(turn) {
+    var parts = String(turn.say || '').match(/[^.!?¡¿]+[.!?]+/g) || [String(turn.say || '')];
+    var n = turn.alert || /^\s*(first|primero)\b/i.test(parts[0]) ? 2 : 1;
+    return parts.slice(0, n).join(' ').replace(/\s+/g, ' ').trim();
+  }
+  function tourScreen(turn) {
+    try { var copy = JSON.parse(JSON.stringify(turn)); copy.say = tourSay(turn); kw().SortyDebug.render(copy); } catch (e) { /* the stage still shows it */ }
+  }
+  /* The tour's items answer in one look. If Sorty asks anyway, nobody in a moving line answers: silence, and Sorty
+     gives the answer that is safe either way, exactly as it does when a person walks off. */
+  function tourSettle(run, turn, tries) {
+    if (!alive(run) || !turn || (turn.type !== 'ask' && turn.type !== 'show') || tries > 3) return Promise.resolve(turn);
+    return kw().Sorty.api.reply(turn.session_id, { type: 'timeout' }).then(function (t) { return tourSettle(run, t, (tries || 0) + 1); });
+  }
+  function tourClock(tour, done) {
+    var running = S.tour === tour && tour.t0 && !done;
+    var total = !tour.t0 ? 0 : running ? performance.now() - tour.t0 : tour.last;
+    $('tourClock').hidden = false; $('tourClock').classList.toggle('done', !!done);
+    $('tcServed').textContent = tour.served + ' of ' + tour.ids.length;
+    $('tcTotal').textContent = (total / 1000).toFixed(1) + ' s';
+    $('tcAvg').textContent = tour.served ? (tour.last / tour.served / 1000).toFixed(1) + ' s each' : '-';
+  }
+  function tourServed(run) {
+    var tour = run.tour; if (!tour || S.tour !== tour) return;
+    tour.served++; tour.last = performance.now() - tour.t0;
+    tourClock(tour);
+  }
+  /* Someone in a hurry: stopped where they are when the answer (or the alarm) comes. */
+  function tourHalt(run, turn) {
+    if (!run.walk) return;
+    var p = $('person'), el = $('item');
+    var dx = HURRY_DX * Math.max(0, Math.min(1, (performance.now() - run.walkT0) / HURRY_MS));   // by the clock: a browser may pause animations
+    run.walk.forEach(function (a) { try { a.cancel(); } catch (e) { /* gone already */ } });
+    run.walk = null; run.dx = dx;
+    p.style.transform = 'translate(' + dx.toFixed(1) + 'px,0)';
+    el.style.transition = ''; el.style.left = (parseFloat(el.style.left) + dx) + 'px';
+    pose('idle');
+    var b = $('sayPerson');
+    if (turn.alert) { clearTimeout(sayTimers.person); sayTimers.person = setTimeout(function () { b.hidden = true; }, 1500); }
+  }
+  function personLeaveFast(withItem, dx) {
+    var p = $('person'), el = $('item'), tok = ++S.leaveTok, base = 'translate(' + (dx || 0).toFixed(1) + 'px,0)';
+    var jobs = [play(p, [{ opacity: 1, transform: base }, { opacity: 0, transform: base + ' translate(140px,60px)' }], { duration: 300, easing: 'ease-in', fill: 'forwards' })];
+    if (withItem && !el.hidden) {
+      jobs.push(play(el, [{ opacity: 1, transform: 'translate(-50%,-50%)' }, { opacity: 0, transform: 'translate(-50%,-50%) translate(140px,60px)' }],
+        { duration: 300, easing: 'ease-in', fill: 'forwards' }));
+    }
+    Promise.all(jobs).then(function () {
+      if (tok !== S.leaveTok) return;                  // the next person is already at the camera
+      p.classList.add('off'); clearAnim(p); p.style.transform = ''; el.hidden = true; clearAnim(el);
+    });
+  }
+
+  function stopTour() {                                // also clears the line and the stopwatch
+    var tour = S.tour;
+    S.tour = null;
+    if (tour && tour.tick) clearInterval(tour.tick);
+    $('btnTour').textContent = 'Play fast tour'; $('btnTour').classList.remove('on');
+    $('queue').innerHTML = ''; $('tourClock').hidden = true;
+  }
+  function tourDone(tour) {                            // everyone served: the stopwatch stays on screen
+    clearInterval(tour.tick);
+    S.tour = null;
+    $('btnTour').textContent = 'Play fast tour'; $('btnTour').classList.remove('on');
+    tourClock(tour, true);
+    var avg = tour.served ? (tour.last / tour.served / 1000).toFixed(1) : '-';
+    sleep(1300).then(function () {
+      if (S.tour || (S.run && !S.run.over)) return;    // something else was started meanwhile
+      try { kw().SortyDebug.idle(); } catch (e) { /* not ready */ }
+      S.leaveTok++; resetStage();
+      why('Fast tour', 'done', tour.served + ' people served in ' + (tour.last / 1000).toFixed(1) + ' seconds: ' + avg +
+        ' seconds each on average, counting the step up, the scan, the answer and the throw.');
+    });
+  }
+  function tourNext(tour) {
+    if (S.tour !== tour) return;
+    var person = tour.line.shift();
+    if (!person) { tourDone(tour); return; }
+    // step up: this person comes to the camera, everyone behind moves one place forward
+    var el = person.el;
+    el.style.zIndex = '25'; el.style.opacity = 1; el.style.filter = 'none'; el.style.transform = 'translate(0px,0px) scale(1)';
+    tour.line.forEach(function (p, i) { qPlace(p.el, i + 1); });
+    sleep(STEP_MS).then(function () {
+      if (S.tour !== tour) return;
+      el.remove();
+      try { kw().SortyDebug.idle(); } catch (e) { /* not ready */ }      // the screen goes back to idle, speech is cut
+      S.leaveTok++; resetStage();
+      var id = person.id, sc = S.byId[id], hurry = HURRY.indexOf(id) >= 0;
+      var run = S.run = { id: id, sc: sc, kind: 'demo', fast: true, tour: tour, turns: 0, over: false, key: keyOf(sc.frames.initial), photo: sc.frames.initial };
+      run.done = new Promise(function (res) { run.finish = res; });
+      var item = $('item'), p = $('person'), ppm = S.stage.person.px_per_m_at_hands || 480;
+      setItem(item, run.key, run.photo);
+      p.classList.remove('off');
+      if (hurry) {                                     // does not stop: walks on toward the recycling bin, item in hand
+        pose('walk');
+        item.style.left = (S.stage.person.feet[0] + 85) + 'px'; item.style.top = (S.stage.person.hands[1] + 0.32 * ppm) + 'px';
+        $('sayPerson').classList.add('hurry'); say('person', 'In a hurry: did not stop');
+        why('In a hurry', 'alert', sc.title + '. This person does not stop: they head straight for the recycling bin. The camera has one glance to catch it.');
+        var opt = { duration: HURRY_MS, easing: 'linear', fill: 'forwards' };
+        run.walkT0 = performance.now();
+        run.walk = [p.animate([{ transform: 'translate(0px,0px)' }, { transform: 'translate(' + HURRY_DX + 'px,0px)' }], opt),
+          item.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(-50%,-50%) translate(' + HURRY_DX + 'px,0px)' }], opt)];
+      } else {
+        pose('present'); beam(true);
+        why('Next', 'look', sc.title + '.');
+      }
+      kw().Sorty.api.startSession({ image: tour.frames[id], lang: 'en', demo_scenario: id })
+        .then(function (t) { return tourSettle(run, t, 0); })
+        .then(function (t) { if (alive(run) && t && t.type === 'verdict') tourScreen(t); })
+        .catch(function () { /* onFail has told the story */ });
+      run.done.then(function () { tourNext(tour); });
+    });
+  }
   function playTour() {
     if (S.tour) { stopTour(); cancelRun(); return; }
-    var ids = TOUR.filter(function (id) { return S.byId[id]; });
+    if (!S.kioskReady) { why('Wait', '', 'The screen software is still starting. Try again in a second.'); return; }
+    var ids = FAST_TOUR.filter(function (id) { return S.byId[id]; });
     if (!ids.length) return;
-    var token = S.tour = {};
-    $('btnTour').textContent = 'Stop tour'; $('btnTour').classList.add('on');
+    stopTour();                                        // an earlier stopwatch goes
     $('optAuto').checked = true; S.autoplay = true; leaveCamera();
-    (function next(i) {
-      if (S.tour !== token) return;
-      if (i >= ids.length) { stopTour(); return; }
-      startRun(ids[i]).then(function () { return sleep(1300); }).then(function () { next(i + 1); });
-    })(0);
+    cancelRun(); markCard(null);
+    var tour = S.tour = { ids: ids, served: 0, t0: 0, last: 0, tick: 0, frames: {}, line: [] };
+    $('btnTour').textContent = 'Stop tour'; $('btnTour').classList.add('on');
+    tour.line = qBuild(ids);
+    tourClock(tour);
+    why('Fast tour', 'look', ids.length + ' people in line, one item each. The stopwatch counts everything: the step up, the scan, the answer and the throw.');
+    Promise.all(ids.map(function (id) { return frameB64(S.byId[id].frames.initial).then(function (b) { tour.frames[id] = b; }); }))
+      .then(function () { return sleep(700); })          // a moment to see the line
+      .then(function () {
+        if (S.tour !== tour) return;
+        tour.t0 = performance.now();
+        tour.tick = setInterval(function () { if (S.tour === tour) tourClock(tour); }, 100);
+        tourNext(tour);
+      })
+      .catch(function () {
+        if (S.tour !== tour) return;
+        stopTour(); cancelRun();
+        why('Problem', 'alert', 'The fast tour could not load its pictures. Is the Sorty server running?');
+      });
   }
 
   /* ---- camera mode: a real object in front of the visitor's webcam, started by a "sensor" button ---- */
@@ -1223,6 +1420,9 @@
   })();
 
   window.SortyShowcase = { state: function () { return { ready: S.kioskReady, run: S.run && { id: S.run.id, kind: S.run.kind, turns: S.run.turns, over: S.run.over }, base: S.base, poses: S.hasPoses, lit: S.litOk, items: Object.keys(S.items).length, scenarios: S.scenarios.length }; }, start: startRun, cancel: cancelRun, fake: confFake };
+
+  window.SortyShowcase.tour = playTour;
+  window.SortyShowcase.tourState = function () { var c = $('tourClock'); return { on: !!S.tour, line: $('queue').children.length, clock: c.hidden ? null : c.textContent.replace(/\s+/g, ' ').trim() }; };
 
   init();
 })();
