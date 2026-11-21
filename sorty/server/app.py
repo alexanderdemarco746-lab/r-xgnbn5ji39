@@ -185,6 +185,17 @@ class App:
             self._budget_used = True
             print(f"AI budget used up (about ${budget.spent_usd():.2f}): back to practice mode.", flush=True)
 
+    def note_failure(self, turn: dict) -> None:
+        """The AI account has no credit left: stop calling it and carry on in practice mode, as with a used-up
+        budget, so the screen keeps giving answers instead of an error for every item. Lasts until a restart."""
+        why = str(turn.get("error", "")).lower()
+        if self.mode == "live" and turn.get("type") == "error" and "credit balance" in why:
+            self.brain = MockBrain(self.settings, self.station, self.scenarios)
+            self.mode = self.brain.mode
+            self._forced_mock = True
+            self._budget_used = True
+            print("The AI account is out of credit: back to practice mode until Sorty is restarted.", flush=True)
+
     def why_practice(self) -> str | None:
         """Why the answers are scripted right now (None while the AI is connected), so the page can explain itself."""
         if self.mode == "live":
@@ -390,6 +401,7 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(400, {"error": "image is required"})
                     return
                 turn = self.app.start_session(body["image"], str(body.get("lang") or "en"), body.get("demo_scenario") or None)
+                self.app.note_failure(turn)
                 self.app.notify(turn)
                 self._json(200, turn)
             elif path == "/api/guard":
@@ -399,6 +411,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, self.app.guard_look(body["image"]))
             elif len(parts) == 4 and parts[:2] == ["api", "session"] and parts[3] == "reply":
                 turn = self.app.brain.reply(parts[2], body)
+                self.app.note_failure(turn)
                 self.app.notify(turn)
                 self._json(200, turn)
             elif len(parts) == 4 and parts[:2] == ["api", "session"] and parts[3] == "end":

@@ -327,3 +327,4 @@ body.cam-on #camBox { max-height: 30vh; }
 .tour-clock.done { border-color: #2DA44E; }
 .say.by-person.hurry { background: #FFF1D6; border: 6px solid #F5A524; }
 .say.by-person.hurry::after { border-top-color: #F5A524; }
+.stop-chip.ask { background: #C77700; border-color: #FFD08A; }   /* fast tour: stopped for a question, not the red alert */

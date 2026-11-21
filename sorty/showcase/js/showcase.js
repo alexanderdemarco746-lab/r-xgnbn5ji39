@@ -18,9 +18,10 @@
   /* The fast tour: eight people in a line, one item each, every item answered in one look. Items that wreck a whole
      load and ordinary items take turns. Two people are in a hurry: they do not stop at the camera, they head straight
      for the recycling bin, and the instant alert has to catch them on the way. */
-  var FAST_TOUR = ['battery_aa', 'clear_bottle_empty', 'plastic_bag', 'banana_peel', 'vape', 'cardboard_box_clean', 'chip_bag', 'glass_bottle_empty'];
-  var HURRY = ['battery_aa', 'plastic_bag'];
-  var QUEUE_SHOWN = 5, STEP_MS = 400, HURRY_DX = 300, HURRY_MS = 1500;
+  var FAST_TOUR = ['soda_can_liquid', 'plastic_bag', 'clear_bottle_empty', 'banana_peel', 'tied_bag_mixed', 'cardboard_box_clean', 'chip_bag', 'glass_bottle_empty'];
+  var HURRY = ['soda_can_liquid', 'plastic_bag'];
+  var TALKS = ['soda_can_liquid'];                     // stopped, then asked: this person answers Sorty's question
+  var QUEUE_SHOWN = 3, STEP_MS = 400, HURRY_DX = 300, HURRY_MS = 1500;
   var ORDER = ['pizza_box_greasy', 'pizza_box_clean', 'soda_can_liquid', 'soda_can_empty', 'clear_bottle_half_full',
     'clear_bottle_empty', 'cup_compostable', 'cup_pet', 'clamshell_food', 'coffee_cup_liquid', 'battery_aa',
     'spray_can_not_empty', 'spray_can_empty', 'chip_bag', 'banana_peel', 'greasy_napkin', 'two_items'];
@@ -257,9 +258,9 @@
     return play($('item'), [{ transform: 'translate(-50%,-50%) rotate(0)' }, { transform: 'translate(-50%,-50%) rotate(-9deg)' },
       { transform: 'translate(-50%,-50%) rotate(8deg)' }, { transform: 'translate(-50%,-50%) rotate(0)' }], { duration: 700 });
   }
-  function itemPour() {
+  function itemPour(ms) {
     return play($('item'), [{ transform: 'translate(-50%,-50%) rotate(0)' }, { transform: 'translate(-50%,-50%) rotate(115deg)', offset: .3 },
-      { transform: 'translate(-50%,-50%) rotate(115deg)', offset: .75 }, { transform: 'translate(-50%,-50%) rotate(0)' }], { duration: 1500, easing: 'ease-in-out' });
+      { transform: 'translate(-50%,-50%) rotate(115deg)', offset: .75 }, { transform: 'translate(-50%,-50%) rotate(0)' }], { duration: ms || 1500, easing: 'ease-in-out' });
   }
   function itemDrop(el, binId, ms) {
     var to = S.stage.bins[binId].opening, x0 = parseFloat(el.style.left), y0 = parseFloat(el.style.top);
@@ -600,17 +601,19 @@
     else if (keep) why('Not trash', '', 'Sorty does not bin things that are not trash. ' + (v.reason || ''));
     else why('Answers', 'done', how + ' ' + (v.reason || ''));
     confVerdict(run, turn);                             // was the common guess a mistake? did the item threaten the whole load?
-    var fast = !!run.fast, dropMs = fast ? 460 : 0;     // fast tour: short holds, the line is waiting
+    var fast = !!run.fast, hero = fast && TALKS.indexOf(run.id) >= 0;   // fast tour: short holds, the line is waiting;
+    var dropMs = hero ? 800 : fast ? 700 : 0;                           // the person who was stopped and asked gets time to be read
     if (fast) tourHalt(run, turn);                      // someone in a hurry stops where they are
     if (fast && turn.alert) { clearTimeout(conf.alarmTimer); conf.alarmTimer = setTimeout(confAlarmOff, 1000); }
 
-    sleep(fast ? 800 : turn.alert ? 2600 : 1700).then(function () {  // an alarm plays out first
+    sleep(hero ? 1700 : fast ? 800 : turn.alert ? 2600 : 1700).then(function () {  // an alarm plays out first
       if (!alive(run)) return;
       if (!binSteps.length) { if (fast) return; confCompare(run); return sleep(2200); }   // nothing goes in a bin: the person keeps it
       var chain = Promise.resolve();
       if (prep.length) {
         why('First', 'check', prep.map(function (p) { return p.text; }).join(', then ') + '. Then the bin.');
         if (!fast) chain = itemPour();
+        else if (hero) chain = itemPour(1000);          // the person who was asked pours it out, visibly
       }
       return chain.then(function () {
         if (!alive(run)) return;
@@ -961,10 +964,9 @@
   /* ---------------------------------------------------------------- fast tour: a line of people and a stopwatch */
   /* Where the k-th person in line stands (1 = next), as an offset from the spot in front of the camera.
      The line runs back toward the side people walk in from: each person a little smaller and dimmer. */
-  function qSlot(k) {
-    var dx = 0, dy = 0;
-    for (var j = 1; j <= k; j++) { var s = Math.pow(0.88, j); dx -= 150 * s + 20; dy -= 30 * s; }
-    return { dx: dx, dy: dy, s: Math.pow(0.88, k), dim: Math.max(0.5, 1 - 0.09 * k) };
+  function qSlot(k) {                                  // three clearly separate people; the rest wait out of sight
+    var n = Math.min(k, QUEUE_SHOWN + 1);
+    return { dx: -175 * n, dy: -13 * n, s: 1 - 0.09 * n, dim: 1 - 0.1 * n };
   }
   function qPlace(el, k) {
     var p = qSlot(k);
@@ -981,14 +983,6 @@
       var el = document.createElement('div'); el.className = 'qp';
       el.style.transformOrigin = feet[0] + 'px ' + feet[1] + 'px';
       var body = document.createElement('img'); body.className = 'body'; body.alt = ''; body.src = $('poseIdle').src; el.appendChild(body);
-      if (meta && S.hasPoses) {                         // carried low, in front of the body
-        var h = Math.max(110, Math.min(560, (meta.height_m || 0.25) * ppm)), w = h * (meta.w / meta.h);
-        if (w > 760) { h *= 760 / w; w = 760; }
-        var th = document.createElement('img'); th.className = 'thing'; th.alt = ''; th.src = 'assets/items/' + meta.file;
-        th.style.width = (w * 0.8) + 'px'; th.style.height = (h * 0.8) + 'px';
-        th.style.left = (feet[0] + 60) + 'px'; th.style.top = (S.stage.person.hands[1] + 0.34 * ppm) + 'px';
-        el.appendChild(th);
-      }
       qPlace(el, i + 1);
       box.appendChild(el);
       return { id: id, el: el };
@@ -1016,8 +1010,33 @@
   /* The tour's items answer in one look. If Sorty asks anyway, nobody in a moving line answers: silence, and Sorty
      gives the answer that is safe either way, exactly as it does when a person walks off. */
   function tourSettle(run, turn, tries) {
+    tries = tries || 0;
     if (!alive(run) || !turn || (turn.type !== 'ask' && turn.type !== 'show') || tries > 3) return Promise.resolve(turn);
-    return kw().Sorty.api.reply(turn.session_id, { type: 'timeout' }).then(function (t) { return tourSettle(run, t, (tries || 0) + 1); });
+    var api = kw().Sorty.api;
+    if (turn.type === 'ask' && TALKS.indexOf(run.id) >= 0) {
+      // Stopped on the way to the bin, then asked: the question, the person's answer, and Sorty's final answer.
+      tourStopAsk(run, turn);
+      try { kw().Sorty.voice.speak(turn.say, 'en'); } catch (e) { /* the bubble still shows it */ }
+      return sleep(1000)
+        .then(function () { return alive(run) ? api.demoAnswer({ scenario_id: run.id, question: turn.say }) : null; })
+        .then(function (r) {
+          if (!alive(run)) return turn;
+          return sleep(800).then(function () { return api.reply(turn.session_id, { type: 'answer', text: (r && r.text) || 'not sure' }); });
+        })
+        .then(function (t) { return t === turn ? t : tourSettle(run, t, tries + 1); });
+    }
+    return api.reply(turn.session_id, { type: 'timeout' }).then(function (t) { return tourSettle(run, t, tries + 1); });
+  }
+  /* The stop for an item whose danger no camera can see: an amber STOP, then Sorty's question. */
+  function tourStopAsk(run, turn) {
+    tourHalt(run, turn);
+    var at = S.stage.lens || S.stage.head, chip = $('stopChip');
+    $('stopWord').textContent = 'STOP';
+    $('stopTime').textContent = typeof turn.timing_ms === 'number' ? 'question in ' + (turn.timing_ms / 1000).toFixed(1) + ' s' : 'one question';
+    chip.classList.add('ask'); chip.style.left = (at[0] + 30) + 'px'; chip.style.top = (at[1] + 48) + 'px'; chip.hidden = false;
+    confBeep();
+    clearTimeout(conf.alarmTimer); conf.alarmTimer = setTimeout(confAlarmOff, 1500);
+    why('Stop', 'ask', 'Stopped on the way to the bin. No camera can see inside it, so Sorty asks one short question before anything goes in.');
   }
   function tourClock(tour, done) {
     var running = S.tour === tour && tour.t0 && !done;
@@ -1040,8 +1059,8 @@
     run.walk.forEach(function (a) { try { a.cancel(); } catch (e) { /* gone already */ } });
     run.walk = null; run.dx = dx;
     p.style.transform = 'translate(' + dx.toFixed(1) + 'px,0)';
-    el.style.transition = ''; el.style.left = (parseFloat(el.style.left) + dx) + 'px';
-    pose('idle');
+    pose('present');                                   // stopped: holds the item out, in the hands
+    el.style.transition = ''; el.style.left = (S.stage.person.hands[0] + dx) + 'px'; el.style.top = S.stage.person.hands[1] + 'px';
     var b = $('sayPerson');
     if (turn.alert) { clearTimeout(sayTimers.person); sayTimers.person = setTimeout(function () { b.hidden = true; }, 1500); }
   }
@@ -1063,7 +1082,7 @@
     S.tour = null;
     if (tour && tour.tick) clearInterval(tour.tick);
     $('btnTour').textContent = 'Play fast tour'; $('btnTour').classList.remove('on');
-    $('queue').innerHTML = ''; $('tourClock').hidden = true;
+    $('queue').innerHTML = ''; $('tourClock').hidden = true; $('stopChip').classList.remove('ask');
   }
   function tourDone(tour) {                            // everyone served: the stopwatch stays on screen
     clearInterval(tour.tick);
@@ -1091,7 +1110,7 @@
       if (S.tour !== tour) return;
       el.remove();
       try { kw().SortyDebug.idle(); } catch (e) { /* not ready */ }      // the screen goes back to idle, speech is cut
-      S.leaveTok++; resetStage();
+      S.leaveTok++; resetStage(); $('stopChip').classList.remove('ask');
       var id = person.id, sc = S.byId[id], hurry = HURRY.indexOf(id) >= 0;
       var run = S.run = { id: id, sc: sc, kind: 'demo', fast: true, tour: tour, turns: 0, over: false, key: keyOf(sc.frames.initial), photo: sc.frames.initial };
       run.done = new Promise(function (res) { run.finish = res; });
@@ -1100,7 +1119,7 @@
       p.classList.remove('off');
       if (hurry) {                                     // does not stop: walks on toward the recycling bin, item in hand
         pose('walk');
-        item.style.left = (S.stage.person.feet[0] + 85) + 'px'; item.style.top = (S.stage.person.hands[1] + 0.32 * ppm) + 'px';
+        item.style.left = '778px'; item.style.top = '590px';          // in the walking figure's front hand
         $('sayPerson').classList.add('hurry'); say('person', 'In a hurry: did not stop');
         why('In a hurry', 'alert', sc.title + '. This person does not stop: they head straight for the recycling bin. The camera has one glance to catch it.');
         var opt = { duration: HURRY_MS, easing: 'linear', fill: 'forwards' };
@@ -1120,7 +1139,7 @@
   }
   function playTour() {
     if (S.tour) { stopTour(); cancelRun(); return; }
-    if (!S.kioskReady) { why('Wait', '', 'The screen software is still starting. Try again in a second.'); return; }
+    if (!S.kioskReady || !$('curtain').classList.contains('gone')) { why('Wait', '', 'The station is still loading. Try again in a second.'); return; }
     var ids = FAST_TOUR.filter(function (id) { return S.byId[id]; });
     if (!ids.length) return;
     stopTour();                                        // an earlier stopwatch goes
