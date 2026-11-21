@@ -872,3 +872,9 @@ def render(scene, name, preview=False):
     bpy.ops.render.render(write_still=True)
     print('RENDERED', out)
     return out
+
+
+def parent_keep(child, par):
+    """Parent while keeping the child's current world transform (parent must still be at identity)."""
+    child.parent = par
+    return child

@@ -265,7 +265,7 @@ def make_pizza_box(open_deg=0.0, greasy=False, seed=1.0):
             st = L.text_obj('star', '★', 0.030, ink, 'seguisym.ttf')
             st.location = (sx * 0.137, cy + sy * 0.137, zt)
             L.parent(st, lid)
-    ft = L.text_obj('front_print', '★  FRESH  •  HOT  •  DELICIOUS  ★', 0.0145, ink, 'arialbd.ttf', spacing=1.2)
+    ft = L.text_obj('front_print', 'FRESH   •   HOT   •   DELICIOUS', 0.0150, ink, 'arialbd.ttf', spacing=1.2)
     ft.rotation_euler.x = math.radians(90)
     ft.location = (0, -D / 2 - 0.0003, H * 0.5)
     L.parent(ft, tray)
@@ -308,11 +308,11 @@ def f_pizza_greasy(scene):
     tray, lid = make_pizza_box(open_deg=104, greasy=True, seed=1.0)
     add_crumbs(tray, seed=3, heavy=True)
     tray.rotation_euler.z = math.radians(-6)
-    return dict(objs=[tray], lens=30, shot=dict(elev=40, azim=20, fill=0.70, fstop=7, shift=(0.0, -0.10)))
+    return dict(objs=[tray], lens=30, shot=dict(elev=41, azim=20, fill=0.80, fstop=7, shift=(0.0, 0.06)))
 
 
 @L.frame('pizza_box_open_clean')
 def f_pizza_clean(scene):
     tray, lid = make_pizza_box(open_deg=104, greasy=False, seed=4.0)
     tray.rotation_euler.z = math.radians(-6)
-    return dict(objs=[tray], lens=30, shot=dict(elev=40, azim=20, fill=0.70, fstop=7, shift=(0.0, -0.10)))
+    return dict(objs=[tray], lens=30, shot=dict(elev=41, azim=20, fill=0.80, fstop=7, shift=(0.0, 0.06)))

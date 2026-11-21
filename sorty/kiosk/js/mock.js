@@ -61,10 +61,10 @@
     { id: 'no', label: L('No', 'No') },
     { id: 'unsure', label: L('Not sure', 'No sé') }
   ];
-  function plain(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  function plain(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
   function saysUnsure(t) { return /(not sure|unsure|no se|don'?t know|dunno|maybe|quizas)/.test(plain(t)); }
-  function saysYes(t) { return !saysUnsure(t) && /(yes|yeah|yep|yup|sure|some|little|half|full|si|un poco|algo|mitad)/.test(plain(t)); }
-  function saysNo(t) { return !saysUnsure(t) && /(no|nope|empty|nothing|vacia|vacio|nada)/.test(plain(t)); }
+  function saysYes(t) { return !saysUnsure(t) && /\b(yes|yeah|yep|yup|sure|some|little|half|full|si|un poco|algo|mitad)\b/.test(plain(t)); }
+  function saysNo(t) { return !saysUnsure(t) && /\b(no|nope|empty|nothing|vacia|vacio|nada)\b/.test(plain(t)); }
 
   /* ---------- placeholder pictures (canvas-drawn, stand-ins for camera frames) ---------- */
   var FONT = '"Segoe UI",system-ui,-apple-system,Arial,sans-serif';

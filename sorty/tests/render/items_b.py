@@ -43,27 +43,31 @@ def banana_mats():
     return m, mi
 
 
-def peel_strip(name, theta, n_strips, mats, length, r_hub, h_top, seed, tip_curl=0.0, side_bend=0.0, w_max=0.040, thick=0.0030):
+def peel_strip(name, theta, n_strips, mats, length, r_hub, h_top, seed, tip_curl=0.0, side_bend=0.0, w_max=0.034,
+               thick=0.0034, twist=0.0):
     rnd = random.Random(seed)
     w0 = 2 * math.pi * r_hub / n_strips
 
     def width(s):
-        if s < 0.30:
-            return w0 + (w_max - w0) * smoothstep(s / 0.30)
-        u = (s - 0.30) / 0.70
-        return max(w_max * (1 - u ** 2.3), 0.0) + 0.0035 * u
+        if s < 0.28:
+            return w0 + (w_max - w0) * smoothstep(s / 0.28)
+        u = (s - 0.28) / 0.72
+        return max(w_max * (1 - u ** 2.6), 0.0) + 0.004 * u
 
     def rcurv(s):
-        return r_hub + (0.021 - r_hub) * smoothstep(s / 0.2) + 0.016 * s
+        return r_hub + (0.0195 - r_hub) * smoothstep(s / 0.2) + 0.009 * s
 
     def edge_drop(s):
         w, rc = width(s), rcurv(s)
         return rc * (1 - math.cos(min(0.5 * w / rc, 1.5)))
 
-    reach = 0.058 + rnd.uniform(-0.005, 0.007)
+    def tw(s):
+        return twist * math.pi * smoothstep((s - 0.45) / 0.33)
+
+    reach = 0.056 + rnd.uniform(-0.004, 0.006)
     g = max(length - 0.085, 0.03)
-    ctrl = [(r_hub, h_top), (r_hub, h_top - 0.007), (r_hub + 0.0015, h_top - 0.013), (r_hub + 0.010, h_top - 0.023),
-            (reach * 0.62, 0.021), (reach, 0.0125), (reach + 0.33 * g, 0.011), (reach + 0.66 * g, 0.010), (reach + g, 0.008)]
+    ctrl = [(r_hub, h_top), (r_hub, h_top - 0.008), (r_hub + 0.002, h_top - 0.015), (r_hub + 0.012, h_top - 0.024),
+            (reach * 0.62, 0.024), (reach, 0.014), (reach + 0.33 * g, 0.012), (reach + 0.66 * g, 0.011), (reach + g, 0.009)]
     dense = []
     for a, b in zip(ctrl[:-1], ctrl[1:]):
         for k in range(8):
@@ -73,11 +77,10 @@ def peel_strip(name, theta, n_strips, mats, length, r_hub, h_top, seed, tip_curl
     for _ in range(6):
         dense = [dense[0]] + [((dense[i - 1][0] + 2 * dense[i][0] + dense[i + 1][0]) / 4,
                                (dense[i - 1][1] + 2 * dense[i][1] + dense[i + 1][1]) / 4) for i in range(1, len(dense) - 1)] + [dense[-1]]
-    # resample by arc length
     acc = [0.0]
     for a, b in zip(dense[:-1], dense[1:]):
         acc.append(acc[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
-    K = 40
+    K = 44
     samples = []
     for k in range(K + 1):
         tgt = acc[-1] * k / K
@@ -90,11 +93,11 @@ def peel_strip(name, theta, n_strips, mats, length, r_hub, h_top, seed, tip_curl
     for k, (rho, z) in enumerate(samples):
         s = k / K
         if rho >= reach * 0.9:
-            ground = thick + 0.0006 + edge_drop(s)
-            wave = 0.0035 * math.sin(s * 9.0 + seed) * (1.0 if s < 0.85 else 0.4)
-            z = max(ground + max(wave, 0), z if rho < reach else ground + max(wave, 0))
-            z += tip_curl * max(0.0, (s - 0.62) / 0.38) ** 2
-        th = theta + side_bend * s * s
+            ground = thick + 0.0006 + edge_drop(s) * abs(math.cos(tw(s))) + 0.5 * width(s) * abs(math.sin(tw(s)))
+            wave = 0.0055 * max(math.sin(s * 10.0 + seed), 0) * (1.0 if s < 0.85 else 0.4)
+            z = ground + wave if rho >= reach else max(ground + wave, z)
+            z += tip_curl * max(0.0, (s - 0.60) / 0.40) ** 2
+        th = theta + side_bend * s * s + 0.10 * math.sin(s * 7.0 + seed) * s
         C.append(Vector((rho * math.cos(th), rho * math.sin(th), z)))
     bm = bmesh.new()
     uv_layer = bm.loops.layers.uv.new('UVMap')
@@ -110,8 +113,11 @@ def peel_strip(name, theta, n_strips, mats, length, r_hub, h_top, seed, tip_curl
         else:
             hdir = hxy.normalized()
         Tr, Tz = T.dot(hdir), T.z
-        N = (-Tz * hdir + Tr * Vector((0, 0, 1))).normalized()
-        B = N.cross(T).normalized()
+        N0 = (-Tz * hdir + Tr * Vector((0, 0, 1))).normalized()
+        B0 = N0.cross(T).normalized()
+        a_ = tw(s)
+        N = N0 * math.cos(a_) + B0 * math.sin(a_)
+        B = -N0 * math.sin(a_) + B0 * math.cos(a_)
         w, rc = width(s), rcurv(s)
         row = []
         for j in range(J + 1):
@@ -132,11 +138,12 @@ def peel_strip(name, theta, n_strips, mats, length, r_hub, h_top, seed, tip_curl
 
 def make_banana_peel(seed=2):
     m_out, m_in = banana_mats()
-    r_hub, h_top = 0.0088, 0.046
-    specs = [(math.radians(200), 0.165, 0.010, 0.30), (math.radians(318), 0.150, 0.026, -0.28), (math.radians(78), 0.128, 0.004, 0.22)]
+    r_hub, h_top = 0.0098, 0.052
+    D = math.radians
+    specs = [(D(207), 0.172, 0.010, 0.28, 0.0), (D(300), 0.150, 0.016, -0.22, 1.0), (D(28), 0.162, 0.006, 0.26, 0.0), (D(118), 0.128, 0.030, -0.20, 0.0)]
     strips = []
-    for i, (th, ln, curl, bend) in enumerate(specs):
-        strips.append(peel_strip(f'peel{i}', th, 3, (m_out, m_in), ln, r_hub, h_top, seed + i * 3, tip_curl=curl, side_bend=bend))
+    for i, (th, ln, curl, bend, twist) in enumerate(specs):
+        strips.append(peel_strip(f'peel{i}', th, 4, (m_out, m_in), ln, r_hub, h_top, seed + i * 3, tip_curl=curl, side_bend=bend, twist=twist))
     ms, nt, bsdf, out = L.new_mat('banana_stem')
     co = L.tex_coord(nt, 'Object')
     sep = nt.nodes.new('ShaderNodeSeparateXYZ')
@@ -144,20 +151,20 @@ def make_banana_peel(seed=2):
     c = L.ramp(nt, L.math_n(nt, 'MULTIPLY', sep.outputs['Z'], 1 / 0.029),
                [(0.0, L.srgb(0.93, 0.74, 0.12)), (0.45, L.srgb(0.62, 0.55, 0.16)), (0.82, L.srgb(0.33, 0.24, 0.10)), (0.97, L.srgb(0.10, 0.07, 0.04))])
     L.setp(nt, bsdf, base=c, rough=0.6)
-    stem = L.lathe('stem', [(r_hub * 1.02, -0.002), (r_hub * 0.98, 0.003), (0.0064, 0.009), (0.0052, 0.020), (0.0055, 0.0265),
-                            (0.0047, 0.0283), (0.0006, 0.0287)], segments=28, mats=[ms], cap_top=True)
+    stem = L.lathe('stem', [(r_hub * 1.03, -0.003), (r_hub * 0.98, 0.003), (0.0068, 0.009), (0.0054, 0.021), (0.0057, 0.0275),
+                            (0.0048, 0.0295), (0.0006, 0.0299)], segments=28, mats=[ms], cap_top=True)
     stem.location = (0, 0, h_top - 0.001)
     stem.rotation_euler = (math.radians(13), math.radians(-9), 0)
-    for s in strips[1:] + [stem]:
-        L.parent(s, strips[0])
+    for s_ in strips[1:] + [stem]:
+        L.parent(s_, strips[0])
     return strips[0], strips + [stem]
 
 
 @L.frame('banana_peel')
 def f_banana(scene):
     root, objs = make_banana_peel()
-    root.rotation_euler.z = math.radians(15)
-    return dict(objs=objs, lens=35, shot=dict(elev=36, azim=10, fill=0.66, fstop=9))
+    root.rotation_euler.z = math.radians(12)
+    return dict(objs=objs, lens=35, shot=dict(elev=40, azim=8, fill=0.74, fstop=9))
 
 
 # =============================================================== AA batteries
@@ -288,15 +295,15 @@ def make_cold_cup(marking=None):
             return t
 
         if marking == 'compostable':
-            put('COMPOSTABLE', -0.0128, 0.0049, 'arialbd.ttf', 1.05)
-            put('♹', -0.0005, 0.0185, 'seguisym.ttf')
-            put('PLA', 0.0135, 0.0062, 'ariblk.ttf', 1.1)
+            put('COMPOSTABLE', -0.0142, 0.0047, 'arialbd.ttf', 1.05)
+            put('♹', -0.0002, 0.0300, 'seguisym.ttf')
+            put('PLA', 0.0150, 0.0060, 'ariblk.ttf', 1.1)
             band = L.lathe('green_band', [(0.04335, 0.1010), (0.04435, 0.1085)], segments=96,
                            mats=[L.simple_mat('band_green', L.srgb(0.08, 0.52, 0.20), rough=0.4)])
             L.parent(band, cup)
         else:
-            put('♳', -0.0030, 0.0200, 'seguisym.ttf')
-            put('PETE', 0.0125, 0.0066, 'ariblk.ttf', 1.1)
+            put('♳', -0.0035, 0.0320, 'seguisym.ttf')
+            put('PETE', 0.0138, 0.0064, 'ariblk.ttf', 1.1)
     return cup
 
 
@@ -338,7 +345,7 @@ def rr_ring(w, d, r, n=8):
     return pts
 
 
-def make_tray(name, w, d, h, r, slope, flange, mat, flip=False, y_off=0.0, thick=0.0022):
+def make_tray(name, w, d, h, r, slope, flange, mat, flip=False, y_off=0.0, thick=0.0030):
     rings = [(w - 2 * slope - 0.040, d - 2 * slope - 0.040, max(r - slope - 0.012, 0.006), 0.0028),
              (w - 2 * slope - 0.032, d - 2 * slope - 0.032, max(r - slope - 0.009, 0.008), 0.0),
              (w - 2 * slope - 0.008, d - 2 * slope - 0.008, r - slope * 0.6, 0.0),
@@ -366,12 +373,12 @@ def make_tray(name, w, d, h, r, slope, flange, mat, flip=False, y_off=0.0, thick
 def foam_mat():
     m, nt, bsdf, out = L.new_mat('foam')
     co = L.tex_coord(nt, 'Object')
-    cells = L.voronoi_tex(nt, co, scale=1100)
+    cells = L.voronoi_tex(nt, co, scale=650)
     n = L.noise_tex(nt, co, scale=90, detail=2)
     c = L.mix_col(nt, n, L.srgb(0.93, 0.93, 0.92), L.srgb(0.98, 0.98, 0.97))
     h = L.math_n(nt, 'ADD', L.math_n(nt, 'MULTIPLY', cells, 0.5), L.math_n(nt, 'MULTIPLY', n, 0.5))
-    L.setp(nt, bsdf, base=c, rough=0.52, sss=0.22, sss_radius=(0.004, 0.004, 0.004), spec=0.3,
-           normal=L.bump(nt, h, strength=0.10, distance=0.0004))
+    L.setp(nt, bsdf, base=c, rough=0.47, sss=0.30, sss_radius=(0.005, 0.005, 0.005), spec=0.35,
+           normal=L.bump(nt, h, strength=0.22, distance=0.0006))
     return m
 
 
@@ -397,50 +404,55 @@ def make_clamshell(open_deg=0.0):
 
 def add_food(base, seed=7):
     rnd = random.Random(seed)
-    zf = 0.0052
-    # rice mound
+    zf = 0.0062
+    # fried rice mound
     rm, nt, bsdf, out = L.new_mat('rice')
     co = L.tex_coord(nt, 'Object')
     cells = L.voronoi_tex(nt, L.mapping(nt, co, scale=(1, 1.9, 1)), scale=420)
-    c = L.mix_col(nt, cells, L.srgb(0.97, 0.96, 0.92), L.srgb(0.86, 0.84, 0.76))
-    L.setp(nt, bsdf, base=c, rough=0.55, sss=0.15, sss_radius=(0.002, 0.002, 0.002), normal=L.bump(nt, cells, strength=0.7, distance=0.0012))
-    cx, cy, a, b, ch = -0.036, 0.012, 0.052, 0.040, 0.021
-    mound = L.blob('rice_mound', 0.040, subdiv=4, amp=0.22, freq=2.4, seed=seed, squash=(1.3, 1.0, 0.52), mat=rm)
+    c = L.mix_col(nt, cells, L.srgb(0.93, 0.80, 0.52), L.srgb(0.70, 0.52, 0.26))
+    L.setp(nt, bsdf, base=c, rough=0.5, normal=L.bump(nt, cells, strength=0.8, distance=0.0014))
+    cx, cy, a, b, ch = -0.036, 0.012, 0.056, 0.046, 0.024
+    mound = L.blob('rice_mound', 0.044, subdiv=4, amp=0.22, freq=2.4, seed=seed, squash=(1.3, 1.02, 0.52), mat=rm)
     mound.location = (cx, cy, zf + 0.001)
     L.parent(mound, base)
-    grain = L.simple_mat('rice_grain', L.srgb(0.98, 0.97, 0.93), rough=0.5, sss=0.2)
-    bm = bmesh.new()
-    for k in range(420):
-        x, y = cx + rnd.uniform(-0.075, 0.075), cy + rnd.uniform(-0.062, 0.062)
+    grains = [L.simple_mat('rice_grain_a', L.srgb(0.97, 0.88, 0.62), rough=0.45, sss=0.1),
+              L.simple_mat('rice_grain_b', L.srgb(0.90, 0.74, 0.42), rough=0.45, sss=0.1)]
+    bms = [bmesh.new(), bmesh.new()]
+    for k in range(1500):
+        x, y = cx + rnd.uniform(-0.085, 0.085), cy + rnd.uniform(-0.070, 0.070)
         q = ((x - cx) / a) ** 2 + ((y - cy) / b) ** 2
         if q < 1.0:
-            z = zf + 0.001 + ch * math.sqrt(1 - q) + rnd.uniform(-0.0005, 0.0015)
-        elif q < 2.3 and rnd.random() < 0.55:
+            z = zf + 0.0015 + ch * math.sqrt(1 - q) + rnd.uniform(-0.0004, 0.0018)
+        elif q < 2.6 and rnd.random() < 0.40:
             z = zf + 0.0008
         else:
             continue
         M = Matrix.Translation((x, y, z)) @ Matrix.Rotation(rnd.uniform(0, 6.28), 4, 'Z') @ Matrix.Rotation(rnd.uniform(-0.5, 0.5), 4, 'Y') @ \
-            Matrix.Diagonal((0.0034, 0.00125, 0.0011, 1))
-        bmesh.ops.create_icosphere(bm, subdivisions=1, radius=1.0, matrix=M)
-    L.parent(L.obj_from_bm('rice_grains', bm, smooth=True, mats=[grain]), base)
-    # peas & carrot cubes on the rice
-    pea = L.simple_mat('pea', L.srgb(0.36, 0.62, 0.18), rough=0.45)
+            Matrix.Diagonal((0.0036, 0.0013, 0.0012, 1))
+        bmesh.ops.create_icosphere(bms[k % 2], subdivisions=1, radius=1.0, matrix=M)
+    for i_, bm_ in enumerate(bms):
+        L.parent(L.obj_from_bm(f'rice_grains{i_}', bm_, smooth=True, mats=[grains[i_]]), base)
+    pea = L.simple_mat('pea', L.srgb(0.33, 0.58, 0.16), rough=0.45)
     carrot = L.simple_mat('carrot', L.srgb(0.93, 0.45, 0.08), rough=0.5)
-    bm_p, bm_c = bmesh.new(), bmesh.new()
-    for k in range(34):
-        x, y = cx + rnd.uniform(-0.045, 0.045), cy + rnd.uniform(-0.034, 0.034)
+    egg = L.simple_mat('egg', L.srgb(0.98, 0.86, 0.30), rough=0.5)
+    bm_p, bm_c, bm_e = bmesh.new(), bmesh.new(), bmesh.new()
+    for k in range(48):
+        x, y = cx + rnd.uniform(-0.048, 0.048), cy + rnd.uniform(-0.038, 0.038)
         q = ((x - cx) / a) ** 2 + ((y - cy) / b) ** 2
         if q >= 0.95:
             continue
-        z = zf + 0.0025 + ch * math.sqrt(1 - q)
-        if k % 2 == 0:
-            bmesh.ops.create_icosphere(bm_p, subdivisions=2, radius=0.0038, matrix=Matrix.Translation((x, y, z)))
+        z = zf + 0.0030 + ch * math.sqrt(1 - q)
+        if k % 3 == 0:
+            bmesh.ops.create_icosphere(bm_p, subdivisions=2, radius=0.0040, matrix=Matrix.Translation((x, y, z)))
+        elif k % 3 == 1:
+            L.add_box(bm_c, (0.0064, 0.0062, 0.0052), (x, y, z), rot=Matrix.Rotation(rnd.uniform(0, 3), 3, 'Z') @ Matrix.Rotation(rnd.uniform(0, 1), 3, 'X'))
         else:
-            L.add_box(bm_c, (0.0062, 0.0060, 0.0050), (x, y, z), rot=Matrix.Rotation(rnd.uniform(0, 3), 3, 'Z') @ Matrix.Rotation(rnd.uniform(0, 1), 3, 'X'))
+            L.add_box(bm_e, (0.0085, 0.0060, 0.0030), (x, y, z), rot=Matrix.Rotation(rnd.uniform(0, 3), 3, 'Z') @ Matrix.Rotation(rnd.uniform(0, 0.6), 3, 'X'))
     L.parent(L.obj_from_bm('peas', bm_p, smooth=True, mats=[pea]), base)
-    co_ = L.obj_from_bm('carrots', bm_c, mats=[carrot])
-    L.add_bevel(co_, 0.0008)
-    L.parent(co_, base)
+    for nm, bm_, mt in (('carrots', bm_c, carrot), ('egg', bm_e, egg)):
+        o_ = L.obj_from_bm(nm, bm_, mats=[mt])
+        L.add_bevel(o_, 0.0008)
+        L.parent(o_, base)
     # fries
     fm, nt, bsdf, out = L.new_mat('fries')
     co = L.tex_coord(nt, 'Object')
@@ -448,27 +460,37 @@ def add_food(base, seed=7):
     c = L.ramp(nt, n, [(0.30, L.srgb(0.62, 0.36, 0.10)), (0.50, L.srgb(0.90, 0.66, 0.24)), (0.75, L.srgb(0.97, 0.80, 0.38))])
     L.setp(nt, bsdf, base=c, rough=0.55, normal=L.bump(nt, n, strength=0.3, distance=0.0006))
     bm = bmesh.new()
-    for k in range(9):
-        ln = rnd.uniform(0.038, 0.066)
-        x, y = 0.045 + rnd.uniform(-0.022, 0.022), -0.005 + rnd.uniform(-0.045, 0.040)
-        z = zf + 0.004 + 0.0045 * (k % 3)
-        R = Matrix.Rotation(rnd.uniform(0, 3.14), 3, 'Z') @ Matrix.Rotation(rnd.uniform(-0.18, 0.18), 3, 'Y')
-        L.add_box(bm, (ln, 0.0068, 0.0066), (x, y, z), rot=R)
+    for k in range(10):
+        ln = rnd.uniform(0.042, 0.070)
+        x, y = 0.048 + rnd.uniform(-0.020, 0.020), 0.004 + rnd.uniform(-0.040, 0.040)
+        z = zf + 0.0045 + 0.0055 * (k % 3)
+        R = Matrix.Rotation(rnd.uniform(0, 3.14), 3, 'Z') @ Matrix.Rotation(rnd.uniform(-0.16, 0.16), 3, 'Y')
+        L.add_box(bm, (ln, 0.0082, 0.0078), (x, y, z), rot=R)
     fr = L.obj_from_bm('fries', bm, mats=[fm])
-    L.add_bevel(fr, 0.0012, segments=2)
+    L.add_bevel(fr, 0.0014, segments=2)
     L.parent(fr, base)
-    # sauce smears
+    # half-eaten breaded chicken pieces
+    nm_, nt, bsdf, out = L.new_mat('nugget')
+    co = L.tex_coord(nt, 'Object')
+    n = L.noise_tex(nt, co, scale=220, detail=4, rough=0.7)
+    c = L.ramp(nt, n, [(0.30, L.srgb(0.45, 0.24, 0.07)), (0.52, L.srgb(0.72, 0.45, 0.14)), (0.75, L.srgb(0.88, 0.62, 0.24))])
+    L.setp(nt, bsdf, base=c, rough=0.7, normal=L.bump(nt, n, strength=0.8, distance=0.002))
+    for k, (x, y, r_, rz) in enumerate(((0.012, -0.052, 0.019, 0.4), (-0.058, -0.048, 0.015, 1.3))):
+        ng = L.blob(f'nugget{k}', r_, subdiv=4, amp=0.30, freq=1.8, seed=seed + 11 + k, squash=(1.25, 0.95, 0.55), mat=nm_)
+        ng.location = (x, y, zf + r_ * 0.5)
+        ng.rotation_euler.z = rz
+        L.parent(ng, base)
+    # ketchup smears (flat, glossy)
     sm, nt, bsdf, out = L.new_mat('sauce')
     co = L.tex_coord(nt, 'Object')
     n = L.noise_tex(nt, co, scale=70, detail=3)
-    c = L.mix_col(nt, n, L.srgb(0.52, 0.07, 0.03), L.srgb(0.72, 0.20, 0.05))
-    L.setp(nt, bsdf, base=c, rough=0.16, normal=L.bump(nt, n, strength=0.2, distance=0.0006))
-    for k, (x, y, rr, sx, sy, rz) in enumerate(((0.020, -0.058, 0.020, 1.5, 0.7, 0.3), (0.070, 0.045, 0.014, 1.0, 1.3, 1.1),
-                                                   (-0.006, 0.060, 0.012, 1.8, 0.6, -0.5), (0.052, -0.030, 0.010, 1.0, 1.0, 0))):
-        s = L.blob(f'sauce{k}', rr, subdiv=3, amp=0.5, freq=1.5, seed=seed + k, squash=(sx, sy, 0.07), mat=sm)
-        s.location = (x, y, zf + (0.003 if k < 3 else 0.012))
-        s.rotation_euler.z = rz
-        L.parent(s, base)
+    c = L.mix_col(nt, n, L.srgb(0.42, 0.03, 0.02), L.srgb(0.62, 0.08, 0.03))
+    L.setp(nt, bsdf, base=c, rough=0.12, normal=L.bump(nt, n, strength=0.15, distance=0.0005))
+    for k, (x, y, rr, sx, sy, rz) in enumerate(((0.070, -0.050, 0.017, 1.3, 0.8, 0.3), (0.082, 0.046, 0.011, 1.0, 1.4, 1.1), (-0.004, 0.066, 0.010, 2.0, 0.6, -0.4))):
+        s_ = L.blob(f'sauce{k}', rr, subdiv=4, amp=0.55, freq=1.3, seed=seed + k, squash=(sx, sy, 0.028), mat=sm)
+        s_.location = (x, y, zf + 0.0002)
+        s_.rotation_euler.z = rz
+        L.parent(s_, base)
 
 
 @L.frame('clamshell_closed')
@@ -483,7 +505,7 @@ def f_clam_open(scene):
     base, lid = make_clamshell(112.0)
     add_food(base)
     base.rotation_euler.z = math.radians(-8)
-    return dict(objs=[base], lens=32, shot=dict(elev=42, azim=16, fill=0.66, fstop=8, shift=(0.0, -0.09)))
+    return dict(objs=[base], lens=32, shot=dict(elev=42, azim=16, fill=0.76, fstop=8, shift=(0.0, 0.05)))
 
 
 # =============================================================== chip bag
@@ -540,7 +562,7 @@ def make_chip_bag(seed=5.0):
         return max(0.0, 1 - (2 * x / w) ** 2) ** 0.5 * max(0.0, 1 - (2 * y / h) ** 2) ** 0.5
 
     def tear_y(x):
-        return h / 2 - 0.030 + 0.009 * fr(x, 0, 34, 3.0) - 0.016 * math.exp(-((x - 0.028) / 0.028) ** 2)
+        return h / 2 - 0.038 + 0.008 * fr(x, 0, 34, 3.0) - 0.050 * math.exp(-((x - 0.040) / 0.030) ** 2)
 
     def build(front):
         bm = bmesh.new()
@@ -554,14 +576,14 @@ def make_chip_bag(seed=5.0):
                 x = x0 + 0.0035 * fr(x0, y0, 9, 1.0) * abs(2 * x0 / w) + 0.010 * (y0 / h) * (2 * x0 / w) * 0.3
                 y = y0 + 0.0030 * fr(x0, y0, 8, 5.0)
                 if front:
-                    z = 0.0016 + 0.0085 * p ** 0.75 * (0.65 + 0.35 * fr(x0, y0, 7, 2.0)) + 0.0060 * (ridge(x0, y0, 16) - 0.9) * p ** 0.35 \
-                        + 0.0016 * fr(x0, y0, 55, 8.0) * p ** 0.3
-                    z = max(z, 0.0014)
+                    z = 0.0016 + 0.0085 * p ** 0.75 * (0.65 + 0.35 * fr(x0, y0, 7, 2.0)) + 0.0088 * (ridge(x0, y0, 16) - 0.9) * p ** 0.35 \
+                        + 0.0022 * fr(x0, y0, 55, 8.0) * p ** 0.3
+                    z = max(z, 0.0030)
                     ty = tear_y(x0)
                     if y0 > ty - 0.022:
-                        z += 0.016 * ((y0 - (ty - 0.022)) / 0.022) ** 2
+                        z += 0.007 * ((y0 - (ty - 0.022)) / 0.022) ** 2
                 else:
-                    z = 0.0006 + 0.0014 * max(ridge(x0, y0, 14, 4.0) - 0.8, 0) * p ** 0.4
+                    z = 0.0006 + 0.0010 * max(ridge(x0, y0, 14, 4.0) - 0.8, 0) * p ** 0.4
                 row.append(bm.verts.new((x, y, z)))
             grid.append(row)
         for j in range(ny):
@@ -593,7 +615,7 @@ def f_chip_bag(scene):
 
 
 # =============================================================== greasy napkins
-def napkin_mat(stained=True, seed=0.0):
+def napkin_mat(stained=True, seed=0.0, emboss=False):
     m, nt, bsdf, out = L.new_mat('napkin')
     co = L.tex_coord(nt, 'Object')
     cos = L.mapping(nt, co, loc=(seed, seed * 0.6, 1.0))
@@ -601,34 +623,50 @@ def napkin_mat(stained=True, seed=0.0):
     c = L.srgb(0.95, 0.95, 0.93)
     rough = 0.92
     if stained:
-        g = L.ramp(nt, L.noise_tex(nt, cos, scale=16, detail=3, rough=0.6), [(0.44, 0), (0.60, 1)])
-        c = L.mix_col(nt, L.math_n(nt, 'MULTIPLY', g, 0.85), c, L.srgb(0.92, 0.66, 0.24))
-        s = L.ramp(nt, L.noise_tex(nt, L.mapping(nt, co, loc=(5 + seed, 2, 3)), scale=22, detail=3, rough=0.65), [(0.53, 0), (0.62, 1)])
-        c = L.mix_col(nt, L.math_n(nt, 'MULTIPLY', s, 0.95), c, L.srgb(0.78, 0.17, 0.05))
-        d = L.ramp(nt, L.noise_tex(nt, L.mapping(nt, co, loc=(9, 7 + seed, 3)), scale=40, detail=2), [(0.66, 0), (0.72, 1)])
-        c = L.mix_col(nt, L.math_n(nt, 'MULTIPLY', d, 0.8), c, L.srgb(0.50, 0.24, 0.06))
-        rough = L.mix_val(nt, L.math_n(nt, 'MAXIMUM', g, s), 0.92, 0.55)
-    L.setp(nt, bsdf, base=c, rough=rough, sss=0.12, sss_radius=(0.004, 0.004, 0.004),
-           normal=L.bump(nt, emb, strength=0.12, distance=0.0003))
+        # translucent yellow-grey grease patches
+        g = L.ramp(nt, L.noise_tex(nt, cos, scale=13, detail=3, rough=0.6), [(0.43, 0), (0.58, 1)])
+        c = L.mix_col(nt, L.math_n(nt, 'MULTIPLY', g, 0.85), c, L.srgb(0.76, 0.60, 0.27))
+        # orange pizza/tomato sauce smears
+        s_ = L.ramp(nt, L.noise_tex(nt, L.mapping(nt, co, loc=(5 + seed, 2, 3)), scale=19, detail=3, rough=0.65), [(0.56, 0), (0.64, 1)])
+        c = L.mix_col(nt, L.math_n(nt, 'MULTIPLY', s_, 0.95), c, L.srgb(0.90, 0.45, 0.03))
+        # small brown spots (bbq / coffee)
+        d = L.ramp(nt, L.noise_tex(nt, L.mapping(nt, co, loc=(9, 7 + seed, 3)), scale=42, detail=2), [(0.64, 0), (0.70, 1)])
+        c = L.mix_col(nt, L.math_n(nt, 'MULTIPLY', d, 0.85), c, L.srgb(0.42, 0.24, 0.08))
+        rough = L.mix_val(nt, L.math_n(nt, 'MAXIMUM', g, s_), 0.92, 0.50)
+    hgt = L.math_n(nt, 'MULTIPLY', emb, 0.25)
+    if emboss:
+        uv = L.tex_coord(nt, 'UV')
+        sep = nt.nodes.new('ShaderNodeSeparateXYZ')
+        nt.links.new(uv, sep.inputs[0])
+        du = L.math_n(nt, 'MINIMUM', sep.outputs['X'], L.math_n(nt, 'SUBTRACT', 1.0, sep.outputs['X']))
+        dv = L.math_n(nt, 'MINIMUM', sep.outputs['Y'], L.math_n(nt, 'SUBTRACT', 1.0, sep.outputs['Y']))
+        dmin = L.math_n(nt, 'MINIMUM', du, dv)
+        band = L.ramp(nt, dmin, [(0.015, 0), (0.025, 1), (0.105, 1), (0.115, 0)])
+        dots = L.ramp(nt, L.voronoi_tex(nt, L.mapping(nt, uv, scale=(46, 46, 1)), scale=1.0), [(0.22, 1), (0.36, 0)])
+        line = L.ramp(nt, dmin, [(0.118, 0), (0.123, 1), (0.128, 1), (0.133, 0)])
+        hgt = L.math_n(nt, 'ADD', hgt, L.math_n(nt, 'ADD', L.math_n(nt, 'MULTIPLY', dots, band), line))
+    L.setp(nt, bsdf, base=c, rough=rough, sss=0.10, sss_radius=(0.004, 0.004, 0.004),
+           normal=L.bump(nt, hgt, strength=0.5 if emboss else 0.12, distance=0.0008 if emboss else 0.0003))
     return m
 
 
-def crumple_ball(name, radius, mat, seed=0.0, squash=0.78, subdiv=5, depth=0.42):
+def crumple_ball(name, radius, mat, seed=0.0, squash=0.78, subdiv=5, depth=0.26):
     bm = bmesh.new()
     bmesh.ops.create_icosphere(bm, subdivisions=subdiv, radius=1.0)
     off = Vector((seed * 5.3, seed * 2.9, seed * 1.1))
     for v in bm.verts:
         p = v.co.normalized()
-        d, _ = noise.voronoi(p * 2.3 + off)
-        facet = d[1] - d[0]                   # ridges at cell borders
-        fine, _ = noise.voronoi(p * 6.0 + off)
-        rr = 1.0 - depth * (0.75 - min(facet, 0.75)) - 0.10 * (0.5 - min(fine[1] - fine[0], 0.5)) + 0.10 * noise.fractal(p * 1.6 + off, 1.0, 2.0, 2)
+        lobes = 0.15 * noise.noise(p * 1.7 + off)
+        crease = 0.085 * (noise.ridged_multi_fractal(p * 2.7 + off, 1.0, 2.0, 3, 1.0, 2.0) - 1.0)
+        fine = 0.030 * noise.ridged_multi_fractal(p * 7.5 + off, 1.0, 2.0, 2, 1.0, 2.0)
+        rr = 1.0 + lobes + crease + fine - 0.03
         v.co = Vector((p.x * rr, p.y * rr, p.z * rr * squash)) * radius
-    return L.obj_from_bm(name, bm, smooth=True, sharp_deg=24, mats=[mat])
+    return L.obj_from_bm(name, bm, smooth=True, sharp_deg=27, mats=[mat])
 
 
 def crumple_sheet(name, size, mat, seed=0.0, amp=0.016, n=70):
     bm = bmesh.new()
+    uvl = bm.loops.layers.uv.new('UVMap')
     off = Vector((seed * 3.1, seed * 1.7, seed))
     grid = []
     for j in range(n + 1):
@@ -648,6 +686,8 @@ def crumple_sheet(name, size, mat, seed=0.0, amp=0.016, n=70):
         for i in range(n):
             f = bm.faces.new((grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]))
             f.smooth = True
+            for loop, (a_, b_) in zip(f.loops, ((i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1))):
+                loop[uvl].uv = (a_ / n, b_ / n)
     ob = L.obj_from_bm(name, bm, smooth=True, sharp_deg=22, mats=[mat])
     L.add_solidify(ob, 0.0006, offset=-1.0)
     return ob
@@ -656,12 +696,19 @@ def crumple_sheet(name, size, mat, seed=0.0, amp=0.016, n=70):
 @L.frame('greasy_napkin')
 def f_napkin(scene):
     m1 = napkin_mat(True, seed=1.0)
-    m2 = napkin_mat(True, seed=4.0)
-    sheet = crumple_sheet('napkin_sheet', 0.175, m2, seed=2.0)
-    sheet.location = (0.022, 0.018, 0)
+    m2 = napkin_mat(True, seed=4.0, emboss=True)
+    m3 = napkin_mat(True, seed=7.0, emboss=True)
+    sheet = crumple_sheet('napkin_sheet', 0.180, m2, seed=2.0, amp=0.013)
+    sheet.location = (0.026, 0.020, 0)
     sheet.rotation_euler.z = math.radians(25)
-    wad = crumple_ball('napkin_wad', 0.047, m1, seed=1.0)
-    wad.location = (-0.040, -0.030, 0.033)
-    wad2 = crumple_ball('napkin_wad2', 0.030, m2, seed=6.0, squash=0.8)
-    wad2.location = (0.060, -0.052, 0.022)
-    return dict(objs=[sheet, wad, wad2], lens=35, shot=dict(elev=38, azim=10, fill=0.70, fstop=9))
+    wad = crumple_ball('napkin_wad', 0.046, m1, seed=1.0)
+    wad.location = (-0.042, -0.030, 0.033)
+    flap = crumple_sheet('napkin_flap', 0.085, m3, seed=5.0, amp=0.010, n=40)
+    flap.location = (-0.070, -0.052, 0.030)
+    flap.rotation_euler = (math.radians(38), math.radians(-22), math.radians(70))
+    wad2 = crumple_ball('napkin_wad2', 0.030, m1, seed=6.0, squash=0.8)
+    wad2.location = (0.064, -0.054, 0.022)
+    flap2 = crumple_sheet('napkin_flap2', 0.060, m3, seed=8.0, amp=0.008, n=32)
+    flap2.location = (0.088, -0.050, 0.020)
+    flap2.rotation_euler = (math.radians(-30), math.radians(25), math.radians(10))
+    return dict(objs=[sheet, wad, wad2, flap, flap2], lens=35, shot=dict(elev=38, azim=10, fill=0.74, fstop=9))

@@ -5,14 +5,15 @@ Run headless (rebuilds the whole scene, renders, saves the .blend):
     blender.exe -b --factory-startup -P build_station.py
 Options after "--":
     --preview            half resolution, few samples, output to renders/_preview/
-    --views a,b,c        any of: hero, story, head, front, retrofit, camview   (default: all main views)
+    --views a,b,c        any of: hero, story, head, front, retrofit, turntable
+                         (default: hero,story,head,front,retrofit; the turntable video is opt-in)
     --no-save            do not write sorty_station.blend
 
 Everything is procedural: no downloaded assets. Fonts are the local Windows Segoe UI files
 (text is converted to meshes, so the .blend has no font dependency).
 Units are meters. The viewer stands at -Y looking toward +Y; viewer-left is -X.
 """
-import bpy, bmesh, sys, os, random, shutil, subprocess
+import bpy, bmesh, sys, os, random, shutil, subprocess, time
 from math import radians, sin, cos, pi, sqrt, atan2
 from mathutils import Vector
 
@@ -30,10 +31,10 @@ def opt(name, default=None):
 
 
 PREVIEW = bool(opt("--preview", False))
-VIEWS = str(opt("--views", "hero,story,head,front,retrofit,camview")).split(",")
+VIEWS = str(opt("--views", "hero,story,head,front,retrofit")).split(",")
 SAVE = not opt("--no-save", False)
 OUT = os.path.join(HERE, "renders", "_preview") if PREVIEW else os.path.join(HERE, "renders")
-os.makedirs(OUT, exist_ok=True)
+os.makedirs(os.path.join(OUT, "parts"), exist_ok=True)
 
 # ----------------------------------------------------------------------------- design constants
 BIN_COLOR = {"recycle": "#1F6FEB", "compost": "#2DA44E", "landfill": "#24292F"}
@@ -41,6 +42,8 @@ LED_COLOR = {"recycle": "#2F81F7", "compost": "#2EE06A", "landfill": "#F4F8FF"}
 BIN_X = {"recycle": -0.51, "compost": 0.0, "landfill": 0.51}        # viewer-left = -X
 BIN_WORD = {"recycle": "RECYCLE", "compost": "COMPOST", "landfill": "LANDFILL"}
 BIN_ICON = {"recycle": "\u267b", "compost": "\U0001F331", "landfill": "\U0001F5D1"}   # Segoe UI Symbol glyphs
+BIN_HINT = {"recycle": "BOTTLES  \u00b7  CANS  \u00b7  CLEAN PAPER", "compost": "FOOD  \u00b7  NAPKINS  \u00b7  GREASY BOXES",
+            "landfill": "WRAPPERS  \u00b7  FOAM  \u00b7  THE REST"}
 BIN_BODY_W = 0.488
 PROFILE = [(-0.225, 0.06), (-0.225, 0.74), (0.0, 1.0), (0.225, 1.0), (0.225, 0.06)]   # (y, z) side profile
 SLOPE_ANGLE = atan2(0.26, 0.225)
@@ -373,9 +376,11 @@ def _principled(nt):
     return next(n for n in nt.nodes if n.bl_idname == "ShaderNodeBsdfPrincipled")
 
 
-def mat_pbr(name, hexc, rough=0.5, metallic=0.0, coat=0.0, emis_hex=None, emis=0.0):
+def mat_pbr(name, hexc, rough=0.5, metallic=0.0, coat=0.0, emis_hex=None, emis=0.0, spec=None):
     m = bpy.data.materials.new(name)
     b = _principled(_nodes(m))
+    if spec is not None:
+        b.inputs["Specular IOR Level"].default_value = spec
     b.inputs["Base Color"].default_value = hexcol(hexc)
     b.inputs["Roughness"].default_value = rough
     b.inputs["Metallic"].default_value = metallic
@@ -499,7 +504,7 @@ def build_materials():
     for k, h in BIN_COLOR.items():
         M["bin_" + k] = mat_pbr("Bin_" + k.capitalize() + "_PowderCoat", h, rough=0.42)
     M["cap"] = mat_pbr("Bin_Deck_LightGray", "#E6E9ED", rough=0.5)
-    M["pocket"] = mat_pbr("Bin_Opening_Dark", "#07080A", rough=0.9)
+    M["pocket"] = mat_pbr("Bin_Opening_Dark", "#050607", rough=1.0, spec=0.0)
     M["plinth"] = mat_pbr("Bin_Plinth_Dark", "#16191D", rough=0.6)
     M["label"] = mat_pbr("Bin_Label_White", "#FFFFFF", rough=0.5, emis_hex="#FFFFFF", emis=0.12)
     M["shell"] = mat_pbr("Head_Shell_White", "#F3F5F7", rough=0.38)
@@ -526,12 +531,15 @@ def build_materials():
     M["crust"] = mat_pbr("Food_Crust", "#C98F4E", rough=0.8)
     M["beam"] = mat_beam("FX_ViewCone", "#8FD8FF", 1.6, 0.085)
     M["beam_line"] = mat_emit("FX_ViewCone_Edges", "#9CE0FF", 3.2)
-    M["decal"] = mat_pbr("Floor_ShowZone", "#F4F9FF", rough=0.6, emis_hex="#CFE6FF", emis=0.75)
+    M["decal"] = mat_pbr("Floor_ShowZone", "#CFEBFF", rough=0.6, emis_hex="#58B8FF", emis=1.15)
     M["floor"] = mat_floor("Floor_PolishedConcrete")
     M["wall"] = mat_pbr("Wall_Warm", "#E4DFD6", rough=0.92)
     M["base"] = mat_pbr("Wall_Baseboard", "#CBC5BA", rough=0.8)
     M["pot"] = mat_pbr("Planter_White", "#ECEAE6", rough=0.6)
-    M["leaf"] = mat_pbr("Planter_Foliage", "#2F6B3A", rough=0.75)
+    M["soil"] = mat_pbr("Planter_Soil", "#3B2F26", rough=0.95)
+    M["leaf"] = mat_pbr("Planter_Leaf_Dark", "#2C6A3B", rough=0.55)
+    M["leaf2"] = mat_pbr("Planter_Leaf_Light", "#4C8C4F", rough=0.55)
+    M["deck_text"] = mat_pbr("Bin_DeckText_Gray", "#2A3037", rough=0.6)
     M["plaincan"] = mat_pbr("Retrofit_PlainBin_Steel", "#9BA3AD", rough=0.38, metallic=0.9)
     M["plainlid"] = mat_pbr("Retrofit_PlainBin_Lid", "#2B3036", rough=0.5)
 
@@ -568,8 +576,6 @@ def build_bin(key, coll, helpers, lights):
     bm.faces.new(left[::-1])
     bm.faces.new(right)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    side[1].material_index = 1      # sloped deposit face
-    side[2].material_index = 1      # flat top
     me = mesh_from_bm("Bin_" + key, bm, smooth=True)
     for mm in (M["bin_" + key], M["cap"], M["pocket"]):
         me.materials.append(mm)
@@ -578,19 +584,45 @@ def build_bin(key, coll, helpers, lights):
     b1 = body.modifiers.new("EdgeBevel", "BEVEL")
     b1.width, b1.segments, b1.limit_method, b1.angle_limit = 0.016, 5, "ANGLE", radians(30)
 
-    # frame on the sloped face: local Z = face normal, local Y = up the slope
-    face = new_obj("Bin_" + key.capitalize() + "_FaceFrame", None, coll, loc=(x, -0.1125, 0.87),
-                   rot=(SLOPE_ANGLE, 0, 0))
+    # light-gray deck plate laid over the sloped face and the flat top (inset, so the body shows as a reveal)
+    ins, th = 0.02, 0.003
+    sdy, sdz = cos(SLOPE_ANGLE), sin(SLOPE_ANGLE)          # slope direction in (y, z)
+    nsy, nsz = -sdz, sdy                                   # slope normal in (y, z)
+    a0 = (PROFILE[1][0] + sdy * ins, PROFILE[1][1] + sdz * ins)
+    a1 = PROFILE[2]
+    a2 = (PROFILE[3][0] - ins, PROFILE[3][1])
+    kk = 1.0 / (1.0 + nsz)                                 # miter at the bend
+    outline = [a0, a1, a2, (a2[0], a2[1] + th), (a1[0] + th * nsy * kk, a1[1] + th), (a0[0] + th * nsy, a0[1] + th * nsz)]
+    hx = w / 2 - ins
+    bm = bmesh.new()
+    lo = [bm.verts.new((-hx, y, z)) for y, z in outline]
+    hi = [bm.verts.new((hx, y, z)) for y, z in outline]
+    m6 = len(outline)
+    for i in range(m6):
+        j = (i + 1) % m6
+        bm.faces.new((lo[i], lo[j], hi[j], hi[i]))
+    bm.faces.new(lo[::-1])
+    bm.faces.new(hi)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    deck_me = mesh_from_bm("Deck_" + key, bm)
+    for mm in (M["cap"], M["cap"], M["pocket"]):
+        deck_me.materials.append(mm)
+    deck = new_obj("Bin_" + key.capitalize() + "_Deck", deck_me, coll, loc=(x, 0, 0))
+    db = deck.modifiers.new("EdgeBevel", "BEVEL")
+    db.width, db.segments, db.limit_method, db.angle_limit = 0.0012, 2, "ANGLE", radians(30)
+
+    # frame on the sloped face (on top of the deck plate): local Z = face normal, local Y = up the slope
+    face = new_obj("Bin_" + key.capitalize() + "_FaceFrame", None, coll,
+                   loc=(x, -0.1125 + nsy * th, 0.87 + nsz * th), rot=(SLOPE_ANGLE, 0, 0))
     cut_me = m_prism("Cutter_" + key, opening_outline(key), -0.24, 0.06, smooth=(key == "recycle"), mat_index=2)
     for mm in (M["pocket"], M["pocket"], M["pocket"]):
         cut_me.materials.append(mm)
     cutter = new_obj("Bin_" + key.capitalize() + "_OpeningCutter", cut_me, helpers, parent=face)
     cutter.hide_render = True
     cutter.display_type = "WIRE"
-    bo = body.modifiers.new("Opening", "BOOLEAN")
-    bo.operation, bo.object, bo.solver = "DIFFERENCE", cutter, "EXACT"
-    b2 = body.modifiers.new("LipBevel", "BEVEL")
-    b2.width, b2.segments, b2.limit_method, b2.angle_limit = 0.004, 3, "ANGLE", radians(30)
+    for target in (body, deck):
+        bo = target.modifiers.new("Opening", "BOOLEAN")
+        bo.operation, bo.object, bo.solver = "DIFFERENCE", cutter, "EXACT"
     wn = body.modifiers.new("WeightedNormal", "WEIGHTED_NORMAL")
     wn.keep_sharp, wn.weight = False, 50
 
@@ -625,6 +657,8 @@ def build_bin(key, coll, helpers, lights):
     LED[key] = {"bsdf": _principled(led.node_tree), "under": glow_mat.node_tree.nodes["Emission"],
                 "lights": [glow, ring_glow]}
 
+    text_obj("Bin_" + key.capitalize() + "_DeckHint", BIN_HINT[key], 0.0112, coll, M["deck_text"], fontfile=FONT_SEMI,
+             parent=face, loc=(0, -0.1365, 0.0008))
     # front graphics: icon + word (white), slightly proud of the panel
     glyph_obj("Bin_" + key.capitalize() + "_Icon", BIN_ICON[key], 0.185, coll, M["label"],
               loc=(x, -0.2263, 0.485), rot=(radians(90), 0, 0))
@@ -680,7 +714,7 @@ def build_head(coll, mount_coll):
                    mat=M["metal_dark"])
     mast.data.shade_smooth()
     add_bevel(mast, 0.006, segments=3)
-    jaw = new_obj("Mount_ClampJaw", m_box("ClampJaw", 0.16, 0.09, 0.012), mount_coll, loc=(0, 0.2, 1.0065),
+    jaw = new_obj("Mount_ClampJaw", m_box("ClampJaw", 0.16, 0.09, 0.012), mount_coll, loc=(0, 0.2, 1.0095),
                   mat=M["metal_dark"])
     jaw.data.shade_smooth()
     add_bevel(jaw, 0.003, segments=2)
@@ -688,7 +722,7 @@ def build_head(coll, mount_coll):
                    mat=M["metal_dark"])
     for sx in (-1, 1):
         new_obj("Mount_ClampKnob", m_cyl("ClampKnob", 0.013, 0.014, seg=24), mount_coll,
-                loc=(sx * 0.052, 0.19, 1.0195), mat=M["metal_knob"])
+                loc=(sx * 0.052, 0.19, 1.0225), mat=M["metal_knob"])
     return head, screen
 
 
@@ -711,20 +745,20 @@ def build_screens(screen, parent_coll):
     # ASK: one short instruction + pictogram
     c = sc["ASK"] = new_coll("Screen_ASK", parent_coll)
     new_obj("Ask_BG", m_polys("Ask_BG", [bgpts]), c, parent=screen, mat=M["scr_dark"])
-    ix, iy, lw = -0.092, -0.004, 0.0062
-    icon = [stadium_pts((ix - 0.034, iy + 0.008), (ix - 0.034, iy - 0.034), lw),
-            stadium_pts((ix - 0.034, iy - 0.034), (ix + 0.034, iy - 0.034), lw),
-            stadium_pts((ix + 0.034, iy - 0.034), (ix + 0.034, iy + 0.008), lw),
-            stadium_pts((ix - 0.034, iy + 0.008), (ix - 0.058, iy + 0.03), lw),
-            stadium_pts((ix + 0.034, iy + 0.008), (ix + 0.058, iy + 0.03), lw)]
+    ix, iy, lw, hw = -0.095, -0.004, 0.0058, 0.027
+    icon = [stadium_pts((ix - hw, iy + 0.006), (ix - hw, iy - 0.03), lw),
+            stadium_pts((ix - hw, iy - 0.03), (ix + hw, iy - 0.03), lw),
+            stadium_pts((ix + hw, iy - 0.03), (ix + hw, iy + 0.006), lw),
+            stadium_pts((ix - hw, iy + 0.006), (ix - hw - 0.013, iy + 0.023), lw),
+            stadium_pts((ix + hw, iy + 0.006), (ix + hw + 0.013, iy + 0.023), lw)]
     new_obj("Ask_BoxIcon", m_polys("Ask_BoxIcon", icon), c, parent=screen, loc=(0, 0, z), mat=M["scr_white"])
-    arrow = [stadium_pts((ix, iy - 0.014), (ix, iy + 0.05), lw),
-             stadium_pts((ix, iy + 0.05), (ix - 0.016, iy + 0.034), lw),
-             stadium_pts((ix, iy + 0.05), (ix + 0.016, iy + 0.034), lw)]
+    arrow = [stadium_pts((ix, iy - 0.012), (ix, iy + 0.046), lw),
+             stadium_pts((ix, iy + 0.046), (ix - 0.014, iy + 0.032), lw),
+             stadium_pts((ix, iy + 0.046), (ix + 0.014, iy + 0.032), lw)]
     new_obj("Ask_OpenArrow", m_polys("Ask_OpenArrow", arrow), c, parent=screen, loc=(0, 0, z), mat=M["scr_accent"])
-    text_obj("Ask_Text", "Open the box", 0.021, c, M["scr_white"], parent=screen, loc=(0.046, 0.016, z))
-    text_obj("Ask_Sub", "and show me the inside", 0.0098, c, M["scr_soft"], fontfile=FONT_SEMI, parent=screen,
-             loc=(0.046, -0.024, z))
+    text_obj("Ask_Text", "Open the box", 0.0195, c, M["scr_white"], parent=screen, loc=(-0.04, 0.014, z), align_x="LEFT")
+    text_obj("Ask_Sub", "and show me the inside", 0.0095, c, M["scr_soft"], fontfile=FONT_SEMI, parent=screen,
+             loc=(-0.039, -0.024, z), align_x="LEFT")
 
     # VERDICT: full bin color, the word, and a huge arrow pointing at the physical bin
     c = sc["VERDICT"] = new_coll("Screen_VERDICT", parent_coll)
@@ -833,7 +867,7 @@ def build_person(coll, box_frame):
 
 
 # ----------------------------------------------------------------------------- FX: camera view cone
-def build_fx(coll, lens, target, w=0.56, h=0.44):
+def build_fx(coll, coll_br, lens, target, w=0.56, h=0.44):
     lens, target = Vector(lens), Vector(target)
     axis = (target - lens).normalized()
     right = axis.cross(Vector((0, 0, 1))).normalized()
@@ -849,8 +883,8 @@ def build_fx(coll, lens, target, w=0.56, h=0.44):
         objs.append(rod("FX_ViewCone_Edge", lens, c, 0.0011, coll, M["beam_line"], seg=8))
     blen, br = 0.085, 0.0042
     for (sx, sy), c in zip(((-1, -1), (1, -1), (1, 1), (-1, 1)), cs):
-        objs.append(limb("FX_ScanBracket", c, c - right * (sx * blen), br, coll, M["beam_line"]))
-        objs.append(limb("FX_ScanBracket", c, c - up * (sy * blen), br, coll, M["beam_line"]))
+        objs.append(limb("FX_ScanBracket", c, c - right * (sx * blen), br, coll_br, M["beam_line"]))
+        objs.append(limb("FX_ScanBracket", c, c - up * (sy * blen), br, coll_br, M["beam_line"]))
     for ob in objs:
         ob.visible_shadow = False
         ob.visible_diffuse = False
@@ -861,10 +895,10 @@ def build_fx(coll, lens, target, w=0.56, h=0.44):
 
 # ----------------------------------------------------------------------------- environment
 def build_environment(coll, lights):
-    new_obj("Env_Floor", m_polys("Floor", [[(-9, -9), (9, -9), (9, 1), (-9, 1)]]), coll, mat=M["floor"])
-    new_obj("Env_Wall", m_polys("Wall", [[(-9, 0), (9, 0), (9, 5), (-9, 5)]]), coll, loc=(0, 0.46, 0),
-            rot=(radians(90), 0, 0), mat=M["wall"])
-    new_obj("Env_Baseboard", m_box("Baseboard", 18, 0.018, 0.11), coll, loc=(0, 0.451, 0.055), mat=M["base"])
+    new_obj("Env_Floor", m_polys("Floor", [[(-30, -9.5), (30, -9.5), (30, 1), (-30, 1)]]), coll, mat=M["floor"])
+    new_obj("Env_Wall", m_box("Wall", 60, 0.1, 6), coll, loc=(0, 0.51, 3), mat=M["wall"])
+    new_obj("Env_WallOpposite", m_box("WallOpposite", 60, 0.1, 6), coll, loc=(0, -9.55, 3), mat=M["wall"])
+    new_obj("Env_Baseboard", m_box("Baseboard", 60, 0.018, 0.11), coll, loc=(0, 0.451, 0.055), mat=M["base"])
     # "show it here" floor zone: a softly lit outline, footprints and a caption
     cx, cy = 0.0, -0.88
     outer = rounded_rect_pts(0.86, 0.58, 0.09, seg=10, cx=cx, cy=cy)
@@ -873,16 +907,20 @@ def build_environment(coll, lights):
     feet = [stadium_pts((cx + sx * 0.105, cy - 0.11), (cx + sx * 0.105, cy + 0.03), 0.085, seg=10) for sx in (-1, 1)]
     new_obj("ShowZone_Footprints", m_polys("ShowZoneFeet", feet), coll, loc=(0, 0, 0.0015), mat=M["decal"])
     text_obj("ShowZone_Caption", "SHOW YOUR ITEM HERE", 0.034, coll, M["decal"], loc=(cx, cy - 0.37, 0.0015))
-    # a simple planter for scale and warmth
-    px, py = -1.75, 0.02
-    pot = new_obj("Planter_Pot", m_cyl("Pot", 0.21, 0.5, seg=48, r2=0.17), coll, loc=(px, py, 0.25),
-                  rot=(radians(180), 0, 0), mat=M["pot"])
-    rnd = random.Random(3)
-    for i in range(9):
-        r = rnd.uniform(0.13, 0.22)
-        new_obj("Planter_Foliage", m_ico("Foliage", r, sub=2), coll,
-                loc=(px + rnd.uniform(-0.16, 0.16), py + rnd.uniform(-0.12, 0.12), 0.62 + rnd.uniform(0.0, 0.62)),
-                scale=(1, 1, rnd.uniform(0.8, 1.2)), mat=M["leaf"])
+    # a simple planter (snake plant) for scale and warmth
+    px, py = 1.42, 0.08
+    new_obj("Planter_Pot", m_cyl("Pot", 0.165, 0.46, seg=48, r2=0.2), coll, loc=(px, py, 0.23), mat=M["pot"])
+    new_obj("Planter_Soil", m_cyl("Soil", 0.19, 0.012, seg=48), coll, loc=(px, py, 0.452), mat=M["soil"])
+    rnd = random.Random(5)
+    for i in range(17):
+        hgt = rnd.uniform(0.42, 0.92)
+        az, tilt, rad = rnd.uniform(0, 2 * pi), radians(rnd.uniform(3, 19)), rnd.uniform(0.0, 0.11)
+        base = Vector((px + rad * cos(az), py + rad * sin(az), 0.44))
+        dirv = Vector((sin(tilt) * cos(az), sin(tilt) * sin(az), cos(tilt)))
+        leaf = new_obj("Planter_Leaf", m_cyl("Leaf", 0.042, hgt, seg=12, r2=0.003), coll,
+                       loc=base + dirv * (hgt / 2), scale=(1, 0.2, 1), mat=M["leaf"] if i % 3 else M["leaf2"])
+        leaf.rotation_euler = dirv.to_track_quat("Z", "Y").to_euler()
+        leaf.rotation_euler.rotate_axis("Z", rnd.uniform(0, pi))
 
     world = bpy.data.worlds.new("World_SoftDaylight")
     try:
@@ -904,6 +942,30 @@ def build_environment(coll, lights):
     area("Light_Key_WindowLeft", (-3.4, -3.6, 3.5), (0.0, -0.1, 0.9), 3.6, 2.6, 260, (1.0, 0.97, 0.93))
     area("Light_Fill_Right", (3.6, -2.8, 2.4), (0.0, -0.2, 0.9), 3.0, 2.0, 80, (0.93, 0.96, 1.0))
     area("Light_Ceiling", (0.0, -1.0, 3.9), (0.0, -0.6, 0.0), 3.4, 1.6, 110)
+    area("Light_WallWash_Left", (-6.5, -4.0, 4.2), (-7.0, 0.5, 1.6), 6.0, 3.0, 400, (1.0, 0.98, 0.95))
+    area("Light_WallWash_Right", (6.5, -4.0, 4.2), (7.0, 0.5, 1.6), 6.0, 3.0, 300, (1.0, 0.98, 0.95))
+
+
+def build_plain_bin(coll, helpers):
+    """A generic round steel bin (1.0 m tall): the same Sorty kit clamps onto its rim."""
+    cut = new_obj("PlainBin_OpeningCutter", m_cyl("PlainBinCutter", 0.105, 0.5, seg=48), helpers, loc=(0, -0.02, 0.95))
+    cut.hide_render = True
+    cut.display_type = "WIRE"
+    for mm in (M["pocket"],):
+        cut.data.materials.append(mm)
+    body = new_obj("PlainBin_Body", m_cyl("PlainBinBody", 0.225, 0.92, seg=72), coll, loc=(0, 0, 0.5))
+    body.data.materials.append(M["plaincan"])
+    body.data.materials.append(M["pocket"])
+    lid = new_obj("PlainBin_Lid", m_cyl("PlainBinLid", 0.229, 0.043, seg=72), coll, loc=(0, 0, 0.9815))
+    lid.data.materials.append(M["plainlid"])
+    lid.data.materials.append(M["pocket"])
+    add_bevel(lid, 0.006, segments=3, angle=50, weighted=False)
+    for ob in (body, lid):
+        bo = ob.modifiers.new("Opening", "BOOLEAN")
+        bo.operation, bo.object, bo.solver = "DIFFERENCE", cut, "EXACT"
+    new_obj("PlainBin_Base", m_cyl("PlainBinBase", 0.215, 0.04, seg=72), coll, loc=(0, 0, 0.02), mat=M["plainlid"])
+    for zz in (0.3, 0.72):
+        new_obj("PlainBin_Band", m_cyl("PlainBinBand", 0.2275, 0.014, seg=72), coll, loc=(0, 0, zz), mat=M["plaincan"])
 
 
 def add_camera(name, loc, target, lens, coll):
@@ -997,7 +1059,15 @@ def render(cam, resx, resy, name):
     scene.render.resolution_percentage = 100
     path = os.path.join(OUT, name)
     scene.render.filepath = path
-    bpy.ops.render.render(write_still=True)
+    bpy.ops.render.render(write_still=False)
+    img = bpy.data.images["Render Result"]
+    for attempt in range(6):                 # a viewer or virus scanner can lock the file for a moment
+        try:
+            img.save_render(path, scene=scene)
+            break
+        except Exception as e:
+            print("SORTY: save retry", attempt + 1, str(e)[:120])
+            time.sleep(1.5)
     print("SORTY: rendered", path)
     return path
 
@@ -1012,10 +1082,12 @@ C_SCREENS = new_coll("Screens", C_HEAD)
 C_PERSON = new_coll("Person")
 C_BOX = new_coll("PizzaBox")
 C_FX = new_coll("FX_CameraView")
+C_FX_BR = new_coll("FX_ScanBrackets", C_FX)
 C_ENV = new_coll("Environment")
 C_LIGHTS = new_coll("Lights")
 C_CAMS = new_coll("Cameras")
 C_HELP = new_coll("Helpers_BooleanCutters")
+C_RETRO = new_coll("Retrofit_PlainBin")
 
 for key in ("recycle", "compost", "landfill"):
     build_bin(key, C_BINS, C_HELP, C_LIGHTS)
@@ -1026,22 +1098,35 @@ box_frame, box_lid = build_pizza_box(C_BOX, (px, py + 0.24, 1.18))
 set_box_open(box_lid, 120)
 build_person(C_PERSON, box_frame)
 build_environment(C_ENV, C_LIGHTS)
+build_plain_bin(C_RETRO, C_HELP)
 bpy.context.view_layer.update()
 LENS_WORLD = head.matrix_world @ Vector((0, -0.094, 0.006))
 BOX_CENTER = box_frame.matrix_world @ Vector((0, 0.165, 0.03))
-FX = build_fx(C_FX, LENS_WORLD, BOX_CENTER)
+FX = build_fx(C_FX, C_FX_BR, LENS_WORLD, BOX_CENTER)
 
 CAM_HERO = add_camera("Cam_Hero", (3.0, -2.95, 1.5), (0.05, -0.45, 0.78), 36, C_CAMS)
-CAM_FRONT = add_camera("Cam_Front", (0.0, -4.7, 1.25), (0.0, 0.0, 0.86), 50, C_CAMS)
-CAM_HEAD = add_camera("Cam_HeadCloseup", (0.4, -0.6, 1.4), (0.0, 0.17, 1.455), 55, C_CAMS)
-CAM_STORY = add_camera("Cam_Storyboard", (1.85, -2.95, 1.55), (-0.04, -0.3, 1.08), 50, C_CAMS)
+CAM_FRONT = add_camera("Cam_Front", (0.0, -4.9, 1.55), (0.0, 0.0, 0.66), 40, C_CAMS)
+CAM_HEAD = add_camera("Cam_HeadCloseup", (0.38, -0.85, 1.4), (0.0, 0.17, 1.445), 55, C_CAMS)
+CAM_STORY = add_camera("Cam_Storyboard", (3.0, -2.95, 1.5), (0.13, -0.3, 0.86), 56, C_CAMS)
 CAM_SORTY = add_camera("Cam_SortyLensView", LENS_WORLD, BOX_CENTER, 22, C_CAMS)
+
+SCREEN_CENTER = head.matrix_world @ Vector((0, SCREEN_Y, 0.0026))
+SCREEN_NORMAL = (head.matrix_world.to_3x3() @ Vector((0, 0, 1))).normalized()
+CAM_ZOOM = add_camera("Cam_ScreenZoom", SCREEN_CENTER + SCREEN_NORMAL * 0.6, SCREEN_CENTER, 50, C_CAMS)
+CAM_ZOOM.data.type = "ORTHO"
+CAM_ZOOM.data.ortho_scale = 0.318
+CAM_RETRO = add_camera("Cam_Retrofit", (2.3, -3.0, 1.5), (0.4, -0.25, 0.78), 36, C_CAMS)
 
 ENGINE = setup_render()
 print("SORTY: render engine =", ENGINE)
 
 
-def set_state(screen_state="VERDICT", lit="compost", person=True, box_open=120, fx=True):
+def set_state(screen_state="VERDICT", lit="compost", person=True, box_open=120, fx=True, brackets=None,
+              retrofit=False):
+    C_BINS.hide_render = retrofit
+    C_BINS.hide_viewport = retrofit
+    C_RETRO.hide_render = not retrofit
+    C_RETRO.hide_viewport = not retrofit
     for name, c in SCREENS.items():
         c.hide_render = (name != screen_state)
         c.hide_viewport = (name != screen_state)
@@ -1049,14 +1134,50 @@ def set_state(screen_state="VERDICT", lit="compost", person=True, box_open=120, 
     for c in (C_PERSON, C_BOX):
         c.hide_render = not person
         c.hide_viewport = not person
-    C_FX.hide_render = not (fx and person)
-    C_FX.hide_viewport = not (fx and person)
+    show_fx = fx and person
+    show_br = show_fx if brackets is None else brackets
+    for ob in C_FX.objects:                 # cone faces + edge lines
+        ob.hide_render = not show_fx
+        ob.hide_viewport = not show_fx
+    for ob in C_FX_BR.objects:              # detection brackets around the item
+        ob.hide_render = not show_br
+        ob.hide_viewport = not show_br
     set_box_open(box_lid, box_open)
 
 
+def run_ffmpeg(inputs, filter_complex, outp):
+    ff = shutil.which("ffmpeg")
+    if not ff:
+        print("SORTY: ffmpeg not found, skipped", outp)
+        return False
+    cmd = [ff, "-y", "-loglevel", "error"]
+    for p in inputs:
+        cmd += ["-i", p]
+    cmd += ["-filter_complex", filter_complex, "-map", "[out]", "-frames:v", "1", outp]
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    print("SORTY: wrote " + outp if r.returncode == 0 else "SORTY: ffmpeg failed: " + r.stderr[:600])
+    return r.returncode == 0
+
+
+FONTF = "C\\:/Windows/Fonts/segoeuib.ttf"       # drawtext needs the drive colon escaped
+K = 0.5 if PREVIEW else 1.0
+
 if "hero" in VIEWS:
     set_state("VERDICT", "compost", True, 120, True)
-    render(CAM_HERO, 1920, 1080, "01_hero.png")
+    hero = render(CAM_HERO, 1920, 1080, "01_hero_clean.png")
+    # what the Sorty lens sees (detection brackets only), used as an inset on the hero image
+    set_state("VERDICT", "compost", True, 120, False, brackets=True)
+    camv = render(CAM_SORTY, 960, 720, "06_sorty_camera_view.png")
+    pw, ph, bd = int(440 * K), int(330 * K), max(2, int(5 * K))
+    fc = ("[1:v]scale=%d:%d,drawbox=x=0:y=ih-%d:w=iw:h=%d:color=black@0.55:t=fill,"
+          "drawtext=fontfile='%s':text='Pizza box   |   grease found':fontcolor=white:fontsize=%d:x=%d:y=h-%d,"
+          "drawbox=x=0:y=0:w=%d:h=%d:color=0x0E131A@0.85:t=fill,"
+          "drawtext=fontfile='%s':text='SORTY CAMERA VIEW':fontcolor=0x8FD8FF:fontsize=%d:x=%d:y=%d,"
+          "pad=iw+%d:ih+%d:%d:%d:color=white[pip];[0:v][pip]overlay=%d:%d[out]"
+          % (pw, ph, int(46 * K), int(46 * K), FONTF, int(21 * K), int(14 * K), int(33 * K),
+             int(206 * K), int(32 * K), FONTF, int(15 * K), int(12 * K), int(9 * K),
+             2 * bd, 2 * bd, bd, bd, int(48 * K), int(44 * K)))
+    run_ffmpeg([hero, camv], fc, os.path.join(OUT, "01_hero.png"))
 
 if "front" in VIEWS:
     set_state("IDLE", None, False, 0, False)
@@ -1067,38 +1188,63 @@ if "head" in VIEWS:
     render(CAM_HEAD, 1920, 1080, "03_head_closeup.png")
 
 if "story" in VIEWS:
-    panels = []
+    panels, zooms = [], []
     for i, (st, lit, op) in enumerate((("IDLE", None, 0), ("ASK", None, 0), ("VERDICT", "compost", 120)), 1):
         set_state(st, lit, True, op, True)
-        panels.append(render(CAM_STORY, 800, 1000, "_story_%d.png" % i))
+        panels.append(render(CAM_STORY, 800, 1000, "parts/story_%d_%s.png" % (i, st.lower())))
+        set_state(st, lit, False, op, False)
+        zooms.append(render(CAM_ZOOM, 640, 384, "parts/screen_%s.png" % st.lower()))
+    caps = ["1   Show your item", "2   Sorty asks to open the box", "3   The correct bin lights up"]
+    band, gap, fs = int(96 * K), int(12 * K), int(38 * K)
+    zw, zb, zm = int(270 * K), max(2, int(5 * K)), int(24 * K)
+    parts = []
+    for i, cap in enumerate(caps):
+        g = gap if i < 2 else 0
+        parts.append("[%d:v]scale=%d:-2,pad=iw+%d:ih+%d:%d:%d:color=white[z%d];[%d:v][z%d]overlay=W-w-%d:%d,"
+                     "pad=iw+%d:ih+%d:0:0:color=white,drawtext=fontfile='%s':text='%s':fontcolor=0x24292F:"
+                     "fontsize=%d:x=%d:y=h-%d[p%d]"
+                     % (i + 3, zw, 2 * zb, 2 * zb, zb, zb, i, i, i, zm, zm, g, band, FONTF, cap, fs, int(22 * K),
+                        int(band * 0.72), i))
+    run_ffmpeg(panels + zooms, ";".join(parts) + ";[p0][p1][p2]hstack=inputs=3[out]",
+               os.path.join(OUT, "04_storyboard.png"))
+
+if "retrofit" in VIEWS:
+    set_state("IDLE", None, False, 0, False, retrofit=True)
+    retro = render(CAM_RETRO, 1920, 1080, "parts/retrofit_clean.png")
+    semi = FONTF.replace("segoeuib", "seguisb")
+    fc = ("[0:v]drawtext=fontfile='%s':text='Retrofit kit':fontcolor=0x24292F:fontsize=%d:x=%d:y=%d,"
+          "drawtext=fontfile='%s':text='The same Sorty head clamps onto':fontcolor=0x57606A:fontsize=%d:x=%d:y=%d,"
+          "drawtext=fontfile='%s':text='any bin you already have':fontcolor=0x57606A:fontsize=%d:x=%d:y=%d[out]"
+          % (FONTF, int(58 * K), int(72 * K), int(64 * K), semi, int(30 * K), int(74 * K), int(140 * K),
+             semi, int(30 * K), int(74 * K), int(182 * K)))
+    run_ffmpeg([retro], fc, os.path.join(OUT, "05_retrofit.png"))
+
+if "turntable" in VIEWS:
+    set_state("VERDICT", "compost", True, 120, True)
+    tdir = os.path.join(OUT, "parts", "turntable")
+    os.makedirs(tdir, exist_ok=True)
+    cam_t = add_camera("Cam_Turntable", (3.0, -2.95, 1.5), (0.05, -0.45, 0.8), 36, C_CAMS)
+    center, radius = Vector((0.05, -0.45, 0.8)), 4.15
+    n = 12 if PREVIEW else 72
+    old_samples, old_thr = scene.cycles.samples, scene.cycles.adaptive_threshold
+    scene.cycles.samples, scene.cycles.adaptive_threshold = min(old_samples, 64), 0.05
+    for i in range(n):
+        az = radians(26 + 40 * i / (n - 1))              # gentle arc around the hero angle (the head stays visible)
+        cam_t.location = (center.x + radius * sin(az), center.y - radius * cos(az), 1.5)
+        cam_t.rotation_euler = (center - cam_t.location).to_track_quat("-Z", "Y").to_euler()
+        render(cam_t, 1280, 720, "parts/turntable/f_%03d.png" % i)
+    scene.cycles.samples, scene.cycles.adaptive_threshold = old_samples, old_thr
     ff = shutil.which("ffmpeg")
     if ff:
-        fontf = "C\\:/Windows/Fonts/segoeuib.ttf"
-        caps = ["1   Show your item", "2   Sorty asks to open the box", "3   The right bin lights up"]
-        k = 0.5 if PREVIEW else 1.0
-        band, gap, fs = int(96 * k), int(12 * k), int(38 * k)
-        parts = []
-        for i, cap in enumerate(caps):
-            g = gap if i < 2 else 0
-            parts.append("[%d:v]pad=iw+%d:ih+%d:0:0:color=white,drawtext=fontfile='%s':text='%s':fontcolor=0x24292F:"
-                         "fontsize=%d:x=%d:y=h-%d[p%d]" % (i, g, band, fontf, cap, fs, int(22 * k), int(band * 0.72), i))
-        fc = ";".join(parts) + ";[p0][p1][p2]hstack=inputs=3[out]"
-        outp = os.path.join(OUT, "04_storyboard.png")
-        cmd = [ff, "-y", "-loglevel", "error"]
-        for p in panels:
-            cmd += ["-i", p]
-        cmd += ["-filter_complex", fc, "-map", "[out]", "-frames:v", "1", outp]
+        outp = os.path.join(OUT, "07_turntable.mp4")
+        cmd = [ff, "-y", "-loglevel", "error", "-framerate", "24", "-i", os.path.join(tdir, "f_%03d.png"),
+               "-filter_complex", "[0:v]split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1[out]", "-map", "[out]",
+               "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "19", outp]
         r = subprocess.run(cmd, capture_output=True, text=True)
-        print("SORTY: storyboard stitched" if r.returncode == 0 else "SORTY: ffmpeg failed: " + r.stderr[:400])
-    else:
-        print("SORTY: ffmpeg not found; storyboard panels left as _story_N.png")
-
-if "camview" in VIEWS:
-    set_state("VERDICT", "compost", True, 120, False)
-    render(CAM_SORTY, 960, 720, "06_sorty_camera_view.png")
+        print("SORTY: wrote " + outp if r.returncode == 0 else "SORTY: ffmpeg failed: " + r.stderr[:600])
 
 # leave the file in the hero / verdict state
-set_state("VERDICT", "compost", True, 120, True)
+set_state("VERDICT", "compost", True, 120, True, retrofit=False)
 scene.camera = CAM_HERO
 scene.render.resolution_x, scene.render.resolution_y = 1920, 1080
 scene.render.filepath = "//renders/01_hero.png"

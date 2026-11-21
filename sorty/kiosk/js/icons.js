@@ -58,7 +58,7 @@
 
   /* Animated pictograms for "show me again" requests. Classes are animated in styles.css. */
   function pg(body) {
-    return '<svg viewBox="0 0 240 200" class="pg" aria-hidden="true" focusable="false"><g class="pg-ink">' + body + '</g></svg>';
+    return '<svg viewBox="24 0 192 190" class="pg" aria-hidden="true" focusable="false"><g class="pg-ink">' + body + '</g></svg>';
   }
 
   var pictograms = {
