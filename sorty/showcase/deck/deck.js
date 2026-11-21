@@ -69,7 +69,18 @@
           : '<div class="num" data-count="' + Number(f.value) + '" data-prefix="' + esc(f.prefix || '') + '" data-suffix="' + esc(f.suffix || '') + '">' + esc((f.prefix || '') + '0' + (f.suffix || '')) + '</div>';
         return r('stat glass', num + '<p>' + esc(f.label || '') + src(f.source) + '</p>');
       }).join('');
-      return head(s, true) + '<div class="cards' + ((s.cards || []).length <= 3 ? ' few' : '') + '">' + cards + '</div>' +
+      /* gallery: a wall of everyday items that are hard to choose a bin for; the ones marked "wreck" light up red */
+      var wn = 0;
+      var gal = s.gallery ? (s.gallery.caption ? r('gcap', esc(s.gallery.caption), 'p') : '') +
+        '<div class="gallery">' + (s.gallery.items || []).map(function (g, n) {
+          if (g.ask) return '<div class="tile ask" style="--n:' + n + '"><b>?</b><span>' + esc(g.ask) + '</span></div>';
+          var d = g.wreck ? 2600 + (wn++) * 230 : 0;
+          return '<div class="tile' + (g.wreck ? ' bad' : '') + '" style="--n:' + n + (g.wreck ? ';--d:' + d + 'ms' : '') + '">' +
+            '<img src="' + esc(g.image) + '" alt="' + esc(g.label || '') + '"><i class="q">?</i>' +
+            (g.wreck ? '<em class="tag">' + esc(g.wreck) + '</em>' : '') + '</div>';
+        }).join('') + '</div>' : '';
+      return head(s, true) + gal +
+        (cards ? '<div class="cards' + ((s.cards || []).length <= 3 ? ' few' : '') + '">' + cards + '</div>' : '') +
         (stats ? '<div class="stats">' + stats + '</div>' : '') +
         ((s.meters || []).length ? '<div class="meters">' + s.meters.map(function (m) {
           var share = m.total ? Math.max(0, Math.min(1, m.value / m.total)) : 0;

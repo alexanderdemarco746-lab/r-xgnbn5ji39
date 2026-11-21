@@ -34,20 +34,58 @@ window.DECK = {
       brand: "Sorty",
       kicker: "The problem",
       headline: "A few items wreck a whole load.",
-      cards: [
-        { title: "Batteries, vapes, electronics", text: "Start fires in trucks and sorting plants.", source: "", tone: "bad", cutout: true, images: ["img/battery_aa.png", "img/vape.png", "img/smartphone.png"] },
-        { title: "Plastic bags", text: "Jam the sorting machines.", source: "", tone: "bad", cutout: true, images: ["img/plastic_bag.png"] },
-        { title: "Liquid and food", text: "Spoil the paper around them.", source: "", tone: "bad", cutout: true, images: ["img/clear_bottle_half_cola.png", "img/clamshell_open_food.png"] }
-      ],
+      /* The gallery: 29 everyday items that are hard to choose a bin for, plus one question tile.
+         Items with "wreck" light up red after a moment, with that word as their tag.
+         Pictures are the Blender cut-outs in showcase/assets/items. */
+      gallery: {
+        caption: "Which bin? Every one of these is hard to choose. Seven of them can wreck the whole load.",
+        items: [
+          { image: "../assets/items/pizza_box_closed.png", label: "Closed pizza box" },
+          { image: "../assets/items/coffee_cup_lid.png", label: "Paper coffee cup" },
+          { image: "../assets/items/battery_aa.png", label: "Batteries", wreck: "fire" },
+          { image: "../assets/items/cold_cup_side.png", label: "Clear cup" },
+          { image: "../assets/items/chip_bag.png", label: "Chip bag" },
+          { image: "../assets/items/soda_can.png", label: "Soda can" },
+          { image: "../assets/items/plastic_bag.png", label: "Plastic bag", wreck: "jams" },
+          { image: "../assets/items/carton_empty.png", label: "Juice carton" },
+          { image: "../assets/items/greasy_napkin.png", label: "Used napkins" },
+          { image: "../assets/items/glass_bottle_empty.png", label: "Glass bottle" },
+
+          { image: "../assets/items/vape.png", label: "Vape", wreck: "fire" },
+          { image: "../assets/items/clamshell_closed.png", label: "Takeout box" },
+          { image: "../assets/items/pizza_box_open_greasy.png", label: "Greasy pizza box" },
+          { image: "../assets/items/opaque_bottle.png", label: "Shampoo bottle" },
+          { image: "../assets/items/clear_bottle_half_cola.png", label: "Half-full bottle", wreck: "spoils" },
+          { image: "../assets/items/plastic_fork.png", label: "Plastic fork" },
+          { image: "../assets/items/banana_peel.png", label: "Banana peel" },
+          { image: "../assets/items/spray_can.png", label: "Spray can" },
+          { image: "../assets/items/tied_bag.png", label: "Bag of trash", wreck: "spoils" },
+          { image: "../assets/items/cold_cup_bottom_compostable.png", label: "Compostable cup" },
+
+          { image: "../assets/items/pizza_box_open_clean.png", label: "Clean pizza box" },
+          { image: "../assets/items/clear_bottle_empty.png", label: "Empty bottle" },
+          { image: "../assets/items/clamshell_open_food.png", label: "Takeout box with food", wreck: "spoils" },
+          { image: "../assets/items/cardboard_box_clean.png", label: "Cardboard box" },
+          { image: "../assets/items/smartphone.png", label: "Phone", wreck: "fire" },
+          { image: "../assets/items/pizza_box_open_leftovers.png", label: "Pizza box with leftovers" },
+          { image: "../assets/items/cold_cup_bottom_pet.png", label: "Plastic cup" },
+          { image: "../assets/items/pizza_box_open_moldy.png", label: "Moldy pizza box" },
+          { image: "../assets/items/two_items_peel_bottle.png", label: "Peel and bottle" },
+          { ask: "Which bin?" }
+        ]
+      },
+      cards: [],
       /* Figures from pitch/WRECKER_FACTS.md (every source opened 21 Nov 2026). Others ready to swap in:
          { value: 36, suffix: "%", label: "of Tampa's recycling did not belong there. The contract allowed 20%.", source: "City of Tampa, news release, Aug 2020" }
          { value: 30, suffix: "+", label: "garbage and recycling truck fires in three years in Hillsborough County.", source: "Hillsborough County, news release, 9 Dec 2025" } */
       stats: [
-        { value: 240, suffix: "+", label: "fires caused by lithium-ion batteries at 64 US waste facilities, 2013 to 2020.", source: "US EPA, lithium-ion battery page, updated Jul 2026" },
+        /* Matches the spoken line "over 30 truck fires in three years". The EPA figure is kept as an alternate:
+           { value: 240, suffix: "+", label: "fires caused by lithium-ion batteries at 64 US waste facilities, 2013 to 2020.", source: "US EPA, lithium-ion battery page, updated Jul 2026" } */
+        { value: 30, suffix: "+", label: "garbage and recycling truck fires in three years, reported by Hillsborough County in a warning about lithium batteries.", source: "Hillsborough County, news release, 9 Dec 2025" },
         { text: "3 h", label: "Up to 3 hours of sorting shutdowns a day in Tampa, caused by bags, film and other tanglers.", source: "City of Tampa, Recycling FAQs, updated Feb 2025" }
       ],
       foot: "Liquid and food residue can get a whole truckload rejected (City of Tampa, Recycling FAQs, 2025).",
-      notes: "This is Sorty. The biggest problem is not people unsure where paper goes. It is the few things that wreck a whole load of recycling. Batteries, vapes and electronics start fires: the US EPA found more than 240 fires caused by lithium-ion batteries at 64 waste facilities. Plastic bags jam the sorting machines: Tampa says tanglers stop its sorting for up to 3 hours each day. And liquid and food can get a whole truckload rejected."
+      notes: "This is Sorty. Look at this wall of everyday items: for every one of them it is hard to choose the bin. But the biggest problem is not people unsure where paper goes. It is the few things, lit up in red, that wreck a whole load of recycling. Batteries, vapes and electronics start fires: the US EPA found more than 240 fires caused by lithium-ion batteries at 64 waste facilities. Plastic bags jam the sorting machines: Tampa says tanglers stop its sorting for up to 3 hours each day. And liquid and food can get a whole truckload rejected."
     },
 
     {

@@ -341,3 +341,46 @@ button { font: inherit; }
   .orb, .mystery b, .wires .ai, .wires path.on, .start img, .fork path, .bin, .go { animation: none !important; }
   .slide, .r, .step, .move, .room, .float, .screen3d, .guess, .meter i, .pipe .rail { transition-duration: .01s !important; transition-delay: 0s !important; }
 }
+
+/* ---------- slide 1 gallery: a wall of everyday items that are hard to choose a bin for.
+   Every tile carries a "?" that keeps changing between the three bin colours; the load-wreckers then light up red. ---------- */
+.gcap { margin: 18px 0 0; font-size: 34px; line-height: 1.25; color: var(--soft); max-width: 1640px; }
+.gallery { margin-top: 24px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 16px; }
+.gallery .tile { position: relative; height: 126px; border-radius: 26px; display: grid; place-items: center;
+  background: rgba(255, 255, 255, .74); border: 1.5px solid rgba(255, 255, 255, .92);
+  box-shadow: 0 10px 26px rgba(20, 30, 50, .10), inset 0 1px 0 rgba(255, 255, 255, .95);
+  opacity: 0; transform: translate3d(0, 26px, 0) scale(.9);
+  transition: opacity .5s ease, transform .7s var(--ease); transition-delay: calc(var(--n, 0) * 36ms + 380ms); }
+.slide.is-active .gallery .tile { opacity: 1; transform: none; }
+.gallery .tile img { width: auto; height: auto; max-width: 112px; max-height: 94px; object-fit: contain; filter: drop-shadow(0 9px 9px rgba(0, 0, 0, .22));
+  animation: gbob 5s ease-in-out infinite alternate; animation-delay: calc(var(--n, 0) * -370ms); }
+@keyframes gbob { from { transform: translateY(-3px) rotate(-1.4deg); } to { transform: translateY(4px) rotate(1.4deg); } }
+.gallery .tile .q { position: absolute; right: 9px; top: 9px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  font-style: normal; font-size: 21px; font-weight: 800; color: #fff; background: var(--blue);
+  animation: gwhich 2.7s steps(1) infinite; animation-delay: calc(var(--n, 0) * -410ms); }
+@keyframes gwhich { 0% { background: #1F6FEB; } 33% { background: #2DA44E; } 66% { background: #24292F; } }
+.gallery .tile .tag { position: absolute; left: 0; right: 0; bottom: 7px; text-align: center; font-style: normal; font-size: 20px; font-weight: 800;
+  letter-spacing: .12em; text-transform: uppercase; color: #fff; opacity: 0; }
+.gallery .tile.bad img { max-height: 76px; margin-bottom: 20px; }
+.slide.is-active .gallery .tile.bad { animation: gwreck .7s ease var(--d, 2600ms) forwards; }
+.slide.is-active .gallery .tile.bad .q { animation: gwhich 2.7s steps(1) infinite, ghide .3s ease var(--d, 2600ms) forwards; }
+.slide.is-active .gallery .tile.bad .tag { animation: gshow .4s ease calc(var(--d, 2600ms) + 200ms) forwards; }
+@keyframes gwreck { 40% { transform: scale(1.14); } 100% { transform: scale(1.04); background: #C62828; border-color: #FF8A80;
+  box-shadow: 0 0 0 6px rgba(198, 40, 40, .22), 0 18px 34px rgba(198, 40, 40, .38); } }
+@keyframes ghide { to { opacity: 0; } }
+@keyframes gshow { to { opacity: 1; } }
+.gallery .tile.ask { background: var(--ink); border-color: var(--ink); color: #fff; grid-auto-flow: column; gap: 12px; padding: 0 14px; }
+.gallery .tile.ask b { font-size: 60px; line-height: 1; color: #FFD166; animation: gpulse 1.6s ease-in-out infinite alternate; }
+.gallery .tile.ask span { font-size: 25px; font-weight: 750; line-height: 1.05; }
+@keyframes gpulse { from { transform: scale(.92) rotate(-6deg); } to { transform: scale(1.1) rotate(6deg); } }
+.slide[data-id="problem"] .stats { margin-top: 24px; }
+.slide[data-id="problem"] .stat { padding: 16px 32px; }
+.slide[data-id="problem"] .stat .num { font-size: 88px; }
+.slide[data-id="problem"] .stat p { font-size: 28px; }
+@media (prefers-reduced-motion: reduce) {
+  .gallery .tile, .slide.is-active .gallery .tile { opacity: 1; transform: none; transition: none; }
+  .gallery .tile img, .gallery .tile .q, .gallery .tile.ask b { animation: none; }
+  .slide.is-active .gallery .tile.bad { animation: none; background: #C62828; border-color: #FF8A80; }
+  .slide.is-active .gallery .tile.bad .q { animation: none; opacity: 0; }
+  .slide.is-active .gallery .tile.bad .tag { animation: none; opacity: 1; }
+}

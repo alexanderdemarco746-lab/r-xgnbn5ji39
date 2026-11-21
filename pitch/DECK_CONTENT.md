@@ -10,10 +10,11 @@ Every figure has a source caption. Figures marked "team" come from the team's ow
 
 - **Kicker:** The problem
 - **Headline:** A few items wreck the whole load
-- **Lines:**
-  - Batteries and vapes: fires
-  - Bags and film: jammed sorting machines
-  - Food and liquid: spoiled paper
+- **Gallery (added 5:08 PM at the team's request):** a wall of 29 everyday items that are hard to choose a bin for, plus a "Which bin?" tile. Each carries a "?" that keeps changing between the three bin colours. After a moment the seven load-wreckers light up red with a tag:
+  - Batteries, vape, phone: FIRE
+  - Plastic bag: JAMS
+  - Half-full bottle, takeout box with food, bag of trash: SPOILS
+- **Caption under the headline:** Which bin? Every one of these is hard to choose. Seven of them can wreck the whole load.
 - **Figures:**
   - **Over 30 truck fires in 3 years** : garbage and recycling trucks, in a county warning about batteries. Hillsborough County Solid Waste, news release, December 2025.
   - **Up to 3 hours a day** : Tampa's sorting line stopped by tangling items. City of Tampa recycling FAQ, read November 2026.
