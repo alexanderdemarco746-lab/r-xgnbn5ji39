@@ -101,7 +101,7 @@ People decide where to throw something in two or three seconds, usually while wa
 
 Three layers of tests live in `sorty/tests/`:
 
-- `test_offline.py` and `test_graph.py`: 157 and 56 checks of the decision loop (both forms), the instant alert, turn format, request limit, failure handling and server. No key or network needed. They check the plumbing, not the AI's judgement.
+- `test_offline.py` and `test_graph.py`: 169 and 56 checks of the decision loop (both forms), the instant alert, turn format, request limit, failure handling and server. No key or network needed. They check the plumbing, not the AI's judgement.
 - `run_scenarios.py`: live runs against a bank of 36 scenarios (`scenarios.json`). Each scenario has camera frames and a hidden truth, for example "the can is half full". A simulated person answers Sorty's questions from that truth, and the final answer is graded. It can also compare Sorty with a one-look camera that uses the same model and rules but may not look again or ask.
 - `run_guard.py`: shows every test picture to the instant alert alone and counts the load-wreckers it caught, the false alarms and the time.
 
@@ -136,7 +136,7 @@ How to use it:
 
 - **Pick an item** in the tray at the bottom. The person walks up with it and the story plays out.
 - **Auto-answer** on: a simulated person answers Sorty's questions. Off: you answer with the buttons that appear under the scene.
-- **Play tour** runs five items in a row, hands-free.
+- **Play fast tour** shows a line of eight people served one after another, with a stopwatch on the stage. Two of them are in a hurry and walk straight at the recycling bin with a load-wrecker; the instant alert stops them. In the one live run timed today, eight people were served in 30.9 seconds.
 - **Use my camera** lets you hold a real object up to your webcam (use Chrome or Edge and allow the camera). The live view stays on, in the virtual person's hands and in the camera panel, so you can see what you are showing. A **Press SPACE now** cue tells you when it is your turn; press the **Sensor: object in range** button or the Space key to start. The button stands in for the distance sensor a real bin would have. This needs an API key to be meaningful: in practice mode the answers are scripted and Sorty is not really looking at your object.
 - **Load-wreckers**: show a battery, a vape, a phone or a plastic bag and the instant alert fires in about a second: red screen, "Stop!", and where the item goes instead.
 - **Faster mode** switches the careful brain to a quicker, cheaper model. **Practice mode** switches to scripted answers by hand, for when the connection fails.
