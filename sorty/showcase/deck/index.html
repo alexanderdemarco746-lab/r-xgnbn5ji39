@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorty: pitch</title>
+<link rel="stylesheet" href="deck.css">
+</head>
+<body>
+
+<div class="backdrop" aria-hidden="true">
+  <div class="room" id="room"></div>
+  <i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i>
+  <div class="veil"></div>
+</div>
+
+<div class="progress" aria-hidden="true"><i id="bar"></i></div>
+
+<main class="canvas" id="canvas">
+  <div class="slides" id="slides"></div>
+</main>
+
+<nav class="dots" id="dots" aria-label="Slides"></nav>
+
+<div class="timer" id="timer" hidden></div>
+
+<aside class="notes" id="notes" hidden>
+  <div class="notes-head"><strong id="notesTitle"></strong><span>N notes · T timer · R reset timer · F full screen · arrows or Space to move</span></div>
+  <p id="notesText"></p>
+</aside>
+
+<script src="content.js"></script>
+<script src="deck.js"></script>
+</body>
+</html>

@@ -4,6 +4,12 @@ Reviewed 2026-11-21, about 3:00 PM. I did not edit the estimate.
 
 **Bottom line:** the arithmetic is right everywhere, and every seller price I re-opened matched. The two headline figures can be said out loud, as long as they keep their conditions: about **$340 in parts** for one kit, and about **$13 a month** to run one bin *on the cheapest AI model*. The weak points are assumptions, not sums.
 
+**Update, 4:15 PM.** After this review, three models were run on a few items with the live AI (logs in `sorty/tests/results/`).
+
+- The cheapest model (Haiku 5.5) answered the soda can without asking in two of its three runs. So the "$13 a month" figure belongs to a model that is not proven good enough, and it should never be quoted without the figure for the default model, about $254.
+- The mid model (Sonnet 5.5) was right on all nine of its runs, on three items.
+- Measured cost per item on the default model was 1 to 5 cents, which fits the estimate's 2.75 cents.
+
 ## What I checked and found correct
 
 - **Every sum, recomputed line by line.** Tier A parts add up to $340.35, tier B to $701.29, tier C to $874.29. The "same as tier A" block ($54.40) and the "same extras as tier B" block ($371.30) are right. Labor is 6 hours at $30, $180.
@@ -25,7 +31,7 @@ Reviewed 2026-11-21, about 3:00 PM. I did not edit the estimate.
 ## What is wrong, misleading or unsupported
 
 1. **The headline hides the default model.** Sorty uses Opus 5.5 unless someone changes one setting. As shipped today, one bin at 300 items a day would cost about **$254 a month** ($247.14 + $1.56 + $5), not $13. The estimate says this in section 5 but not at the top.
-2. **"Cheapest sensible" is not yet shown to be sensible.** Nobody has tested whether Haiku 5.5 sorts correctly. The $13 figure stands only if it does.
+2. **"Cheapest sensible" is not yet shown to be sensible.** When this review was written, nobody had tested whether Haiku 5.5 sorts correctly; see the update above. The $13 figure stands only if it does.
 3. **The top summary compares two different kits.** "$13 with Haiku or $135 with Sonnet" sets tier A against tier B. On the same tier A kit, Sonnet would be about $130.
 4. **Token counts are an estimate, not a measurement.** The estimate says so. My own count from the real prompt sizes gives about 6,400 to 6,900 input tokens per item, against the estimate's 6,100. That would make the Haiku AI fee $7 to $8 a month, not $6.24. Small.
 5. **Two billing effects are left out, and they pull in opposite directions.**

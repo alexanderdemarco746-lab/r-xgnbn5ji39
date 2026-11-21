@@ -180,5 +180,26 @@
     "h": 654,
     "height_m": 0.6237,
     "label": "Moldy pizza box"
+  },
+  "vape": {
+    "file": "vape.png",
+    "w": 658,
+    "h": 614,
+    "height_m": 0.071,
+    "label": "Disposable vape"
+  },
+  "plastic_bag": {
+    "file": "plastic_bag.png",
+    "w": 654,
+    "h": 588,
+    "height_m": 0.4022,
+    "label": "Plastic grocery bag"
+  },
+  "carton_empty": {
+    "file": "carton_empty.png",
+    "w": 262,
+    "h": 654,
+    "height_m": 0.2664,
+    "label": "Juice carton"
   }
 }

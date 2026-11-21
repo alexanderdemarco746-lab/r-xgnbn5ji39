@@ -1,0 +1,186 @@
+{
+  "_about": "For each Sorty demo scenario, the wrong bin people commonly choose and a sourced fact about that mistake; bin rules differ between cities, so each 'mistake' sentence is written to hold in general and each 'stat' comes from the page in 'url'.",
+  "_checked": "2026-11-21",
+
+  "coffee_cup_liquid": {
+    "people_guess": "recycle",
+    "thought": "It's paper, so recycling?",
+    "mistake": "Disposable coffee cups are a common recycling contaminant: the paper is lined with plastic, so many recycling programs do not accept them.",
+    "stat": "46% of participants put disposable coffee cups in the virtual recycling bin in a sorting study by University of Virginia and Indiana University researchers (published 2023).",
+    "source": "Barnett, Klotz, Hancock and Attari, The Conversation, 2023",
+    "url": "https://theconversation.com/decades-of-public-messages-about-recycling-in-the-us-have-crowded-out-more-sustainable-ways-to-manage-waste-208924"
+  },
+
+  "pizza_box_greasy": {
+    "people_guess": "recycle",
+    "thought": "It's cardboard, so recycling?",
+    "mistake": "Many people assume pizza boxes are recyclable, but rules differ: some programs take empty boxes even when greasy, while others refuse food-soiled boxes.",
+    "stat": "46% of Americans believe pizza boxes can be recycled curbside (Ipsos survey, 2020).",
+    "source": "Consumer Brands Association / Ipsos, 2020",
+    "url": "https://consumerbrandsassociation.org/?p=7634"
+  },
+
+  "pizza_box_moldy": {
+    "people_guess": "recycle",
+    "thought": "Cardboard goes in recycling, leftovers and all?",
+    "mistake": "Some people put pizza boxes in recycling with food still inside, but food cannot go in recycling, so the box has to be emptied first.",
+    "stat": "10% of people surveyed didn't know they needed to empty their pizza boxes, and 15% more didn't know food cannot go in recycling (survey of 1,400 people in the U.S., published 2020).",
+    "source": "The Recycling Partnership, 2020",
+    "url": "https://recyclingpartnership.org/recyclability-of-pizza-boxes/"
+  },
+
+  "chip_bag": {
+    "people_guess": "recycle",
+    "thought": "It's shiny like foil, so recycling?",
+    "mistake": "Chip bags are a common contaminant in recycling bins: they are multi-layer plastic that curbside programs generally cannot recycle.",
+    "stat": "",
+    "source": "Republic Services, West Contra Costa County (CA) flyer, 2026",
+    "url": "https://www.republicservices.com/sites/default/files/legacy_documents/Muni/California/WCCC/Know-Before-You-Throw-Camera-Technology.pdf"
+  },
+
+  "cup_compostable": {
+    "people_guess": "recycle",
+    "thought": "It's a clear plastic cup, so recycling?",
+    "mistake": "Many people think compostable cups can go in recycling, but compostable plastics are not meant for recycling and can contaminate it.",
+    "stat": "55% of U.S. adults mistakenly thought compostable items could be recycled with cans and bottles (Harris Poll of 2,070 adults, October 2025).",
+    "source": "Keep America Beautiful / The Harris Poll, 2025",
+    "url": "https://kab.org/americans-overwhelmingly-support-recycling-yet-rates-remain-stubbornly-low-and-many-dont-get-it-right/"
+  },
+
+  "plastic_fork": {
+    "people_guess": "recycle",
+    "thought": "It's plastic, so recycling?",
+    "mistake": "Plastic cutlery often goes in recycling, but it is generally not recyclable in curbside bins.",
+    "stat": "38% of U.S. adults said plastic cutlery can be recycled in their curbside bin (survey of 2,011 adults, September 2022).",
+    "source": "Republic Services Consumer Recycling Survey, 2022",
+    "url": "https://www.republicservices.com/cms/documents/Documents/AmericaRecyclesDay/America-Recycles-Day-Survey-Data-2022.pdf"
+  },
+
+  "clamshell_food": {
+    "people_guess": "recycle",
+    "thought": "It's a takeout container, so recycling?",
+    "mistake": "Foam takeout boxes often go in recycling, but foam is generally not recyclable in curbside bins, and leftover food contaminates recycling.",
+    "stat": "21% of U.S. adults said Styrofoam can be recycled in their curbside bin (survey of 2,011 adults, September 2022).",
+    "source": "Republic Services Consumer Recycling Survey, 2022",
+    "url": "https://www.republicservices.com/cms/documents/Documents/AmericaRecyclesDay/America-Recycles-Day-Survey-Data-2022.pdf"
+  },
+
+  "greasy_napkin": {
+    "people_guess": "recycle",
+    "thought": "Napkins are paper, so recycling?",
+    "mistake": "Used napkins often go in recycling because they are paper, but napkins and paper towels are generally not recyclable in curbside bins.",
+    "stat": "34% of U.S. adults said paper towels or napkins can be recycled in their curbside bin (survey of 2,011 adults, September 2022).",
+    "source": "Republic Services Consumer Recycling Survey, 2022",
+    "url": "https://www.republicservices.com/cms/documents/Documents/AmericaRecyclesDay/America-Recycles-Day-Survey-Data-2022.pdf"
+  },
+
+  "battery_aa": {
+    "people_guess": "landfill",
+    "thought": "It's tiny, so just trash it?",
+    "mistake": "Batteries are often thrown in the trash or mixed in with recycling instead of being taken to a battery drop-off.",
+    "stat": "36% of U.S. consumers throw batteries in the trash and 30% mix them with other recyclables (survey of 4,032 U.S. adults, published 2024).",
+    "source": "UL Standards & Engagement, 2024",
+    "url": "https://ulse.org/insight/data-insights-consumer-perceptions-sustainability-energy-transition/"
+  },
+
+  "spray_can_not_empty": {
+    "people_guess": "recycle",
+    "thought": "It's a metal can, so recycling?",
+    "mistake": "Spray cans that still hold product get put in recycling, but the US EPA says aerosol cans that are not empty should never go in the recycling bin and lists them as household hazardous waste.",
+    "stat": "79.1% of about 900 aerosol cans pulled from two recycling facilities had less than 3% residue; the rest still held more (industry test).",
+    "source": "Aerosol Recycling Initiative (CMI and HCPA), white paper summary",
+    "url": "https://www.thehcpa.org/wp-content/uploads/2024/04/Aerosol-White-Paper-EXECUTIVE-SUMMARY-FINAL.pdf"
+  },
+
+  "smartphone": {
+    "people_guess": "landfill",
+    "thought": "It's broken, so just trash it?",
+    "mistake": "Old phones still get thrown in the trash, but they contain lithium-ion batteries and belong at an electronics recycler or take-back program.",
+    "stat": "19% of U.S. adults throw away old devices such as smartphones (CNET survey by YouGov of 2,511 adults, 2025).",
+    "source": "CNET / YouGov survey, 2025, as reported by Supply Chain Connect",
+    "url": "https://www.supplychainconnect.com/news-trends/article/55287926/shining-a-light-on-electronics-hoarding-and-e-waste"
+  },
+
+  "clear_bottle_half_full": {
+    "people_guess": "recycle",
+    "thought": "It's a bottle, so straight into recycling?",
+    "mistake": "Bottles often go into recycling with liquid still inside, but food and liquids are among the most common recycling contaminants, so containers should be emptied first.",
+    "stat": "",
+    "source": "WM (Waste Management), Most Common Contaminants poster, 2026",
+    "url": "https://www.wm.com/content/dam/wm/documents/RecyclingResources/Posters-Guides-Tools/Poster-Most-Common-Contaminants-093026.pdf"
+  },
+
+  "soda_can_liquid": {
+    "people_guess": "recycle",
+    "thought": "Cans are recyclable, so toss it in?",
+    "mistake": "Half-full cans get tossed straight into recycling, but leftover liquid is a common contaminant, so the can should be emptied first.",
+    "stat": "",
+    "source": "WM (Waste Management), Most Common Contaminants poster, 2026",
+    "url": "https://www.wm.com/content/dam/wm/documents/RecyclingResources/Posters-Guides-Tools/Poster-Most-Common-Contaminants-093026.pdf"
+  },
+
+  "tied_bag_mixed": {
+    "people_guess": "recycle",
+    "thought": "Some of it's recyclable, so recycling?",
+    "mistake": "Tied bags often end up in recycling, but bagged items are among the most common recycling contaminants: recyclables should go in loose, and bagged trash belongs in the landfill bin.",
+    "stat": "",
+    "source": "WM (Waste Management), Most Common Contaminants poster, 2026",
+    "url": "https://www.wm.com/content/dam/wm/documents/RecyclingResources/Posters-Guides-Tools/Poster-Most-Common-Contaminants-093026.pdf"
+  },
+
+  "vape": {
+    "people_guess": "landfill",
+    "thought": "It's empty, so just trash it?",
+    "mistake": "Most young users throw empty disposable vapes in the trash, but they contain lithium batteries and nicotine residue and should go to hazardous-waste or battery and electronics recycling instead.",
+    "stat": "68% of disposable e-cigarette users aged 15 to 24 threw their empty devices in the trash, and 13% put them in regular recycling bins (2022).",
+    "source": "Truth Initiative, 2022",
+    "url": "https://truthinitiative.org/research-resources/harmful-effects-tobacco/most-young-users-put-disposable-e-cigarettes-trash"
+  },
+
+  "plastic_bag": {
+    "people_guess": "recycle",
+    "thought": "Plastic bags are recyclable, right?",
+    "mistake": "Plastic bags often go in curbside recycling, but they are generally not accepted there because they tangle sorting equipment.",
+    "stat": "61% of U.S. adults said flexible plastic can be recycled in their curbside bin, and 41% said so for plastic grocery bags (survey of 2,011 adults, September 2022).",
+    "source": "Republic Services Consumer Recycling Survey, 2022",
+    "url": "https://www.republicservices.com/cms/documents/Documents/AmericaRecyclesDay/America-Recycles-Day-Survey-Data-2022.pdf"
+  },
+
+  "_more_items": [
+    {
+      "name": "Plastic straws",
+      "wrong_bin": "recycle",
+      "right_place": "landfill (generally not recyclable in curbside bins)",
+      "source": "Republic Services Consumer Recycling Survey, 2022: 34% of U.S. adults said straws can be recycled in their curbside bin",
+      "url": "https://www.republicservices.com/cms/documents/Documents/AmericaRecyclesDay/America-Recycles-Day-Survey-Data-2022.pdf"
+    },
+    {
+      "name": "Bubble wrap",
+      "wrong_bin": "recycle",
+      "right_place": "landfill (generally not recyclable in curbside bins)",
+      "source": "Republic Services Consumer Recycling Survey, 2022: 30% of U.S. adults said bubble wrap can be recycled in their curbside bin",
+      "url": "https://www.republicservices.com/cms/documents/Documents/AmericaRecyclesDay/America-Recycles-Day-Survey-Data-2022.pdf"
+    },
+    {
+      "name": "Red plastic party cups (Solo cups)",
+      "wrong_bin": "recycle",
+      "right_place": "landfill in many programs (listed among frequently unrecyclable items)",
+      "source": "Consumer Brands Association / Ipsos, 2020: 43% of Americans believe Solo cups can be recycled curbside",
+      "url": "https://consumerbrandsassociation.org/?p=7634"
+    },
+    {
+      "name": "Holiday lights, extension cords and hangers",
+      "wrong_bin": "recycle",
+      "right_place": "landfill (they wrap around sorting equipment and can shut down a facility)",
+      "source": "WM (Waste Management), Most Common Contaminants poster, 2026",
+      "url": "https://www.wm.com/content/dam/wm/documents/RecyclingResources/Posters-Guides-Tools/Poster-Most-Common-Contaminants-093026.pdf"
+    },
+    {
+      "name": "Paper plates",
+      "wrong_bin": "recycle",
+      "right_place": "compost if possible",
+      "source": "WM (Waste Management), Most Common Contaminants poster, 2026",
+      "url": "https://www.wm.com/content/dam/wm/documents/RecyclingResources/Posters-Guides-Tools/Poster-Most-Common-Contaminants-093026.pdf"
+    }
+  ]
+}

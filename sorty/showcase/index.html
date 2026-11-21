@@ -16,6 +16,8 @@
       <span class="sub">virtual prototype</span>
       <span id="modeBadge" class="badge" hidden></span>
       <span id="budget" class="badge" hidden title="Estimated AI spending against the limit"></span>
+      <span id="saved" class="badge saved" hidden title="Items in this browser session where Sorty's answer was not the bin most people pick"></span>
+      <span id="loads" class="badge loads" hidden title="Items caught in this browser session that would have wrecked a whole load of recycling"></span>
     </div>
     <div class="controls">
       <label class="toggle" title="A simulated person answers Sorty's questions">
@@ -25,6 +27,10 @@
       <label class="toggle" title="Uses a faster, cheaper AI model and runs the separate grease check only when Sorty is unsure">
         <input type="checkbox" id="optFast">
         <span>Faster mode</span>
+      </label>
+      <label class="toggle" title="Scripted answers, no AI and no internet needed: use it if the connection fails">
+        <input type="checkbox" id="optPractice">
+        <span>Practice mode</span>
       </label>
       <button id="btnTour" class="btn" type="button">Play tour</button>
       <button id="btnCam" class="btn" type="button" title="Hold a real object up to your webcam">Use my camera</button>
@@ -80,6 +86,13 @@
           <div id="item" class="item" hidden><img id="itemImg" alt=""><video id="itemVid" autoplay muted playsinline></video></div>
           <div id="item2" class="item" hidden><img id="item2Img" alt=""></div>
           <div id="ripple" class="ripple" hidden></div>
+
+          <!-- easy to get wrong: the bin most people pick, the alarm for items that wreck a whole load, and the comparison at the end -->
+          <svg id="guessFx" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path id="guessArc" fill="none"/><polygon id="guessHead"/></svg>
+          <div id="guessBadge" class="guess-badge" hidden><i id="guessIcon">?</i><span id="guessText">Common guess</span></div>
+          <div id="alarm" class="alarm" hidden></div>
+          <div id="stopChip" class="stop-chip" hidden><b id="stopWord">STOP</b><span id="stopTime"></span></div>
+          <div id="versus" class="versus" hidden></div>
 
           <div id="pressCue" class="press-cue" hidden></div>
 

@@ -15,7 +15,7 @@
     hasPoses: false, litOk: {}
   };
 
-  var TOUR = ['pizza_box_greasy', 'soda_can_liquid', 'clear_bottle_half_full', 'cup_compostable', 'battery_aa'];
+  var TOUR = ['coffee_cup_liquid', 'cup_compostable', 'chip_bag', 'pizza_box_greasy', 'battery_aa'];   // items people get wrong lead the tour
   var ORDER = ['pizza_box_greasy', 'pizza_box_clean', 'soda_can_liquid', 'soda_can_empty', 'clear_bottle_half_full',
     'clear_bottle_empty', 'cup_compostable', 'cup_pet', 'clamshell_food', 'coffee_cup_liquid', 'battery_aa',
     'spray_can_not_empty', 'spray_can_empty', 'chip_bag', 'banana_peel', 'greasy_napkin', 'two_items'];
@@ -40,7 +40,8 @@
       getJSON('/api/config'),
       stageP,
       getJSON('assets/items/items.json').catch(function () { return {}; }),
-      getJSON('/api/demo/scenarios').catch(function () { return []; })
+      getJSON('/api/demo/scenarios').catch(function () { return []; }),
+      confLoad()
     ]).then(function (r) {
       S.cfg = r[0]; S.stage = r[1]; S.items = r[2] || {}; S.scenarios = r[3] || [];
       S.scenarios.forEach(function (s) { S.byId[s.id] = s; });
@@ -61,7 +62,7 @@
   function setBadge() {
     var b = $('modeBadge');
     if (S.cfg.mode === 'live') { b.textContent = 'Live AI: ' + (S.cfg.model || 'Claude') + (S.cfg.profile && S.cfg.profile.name === 'fast' ? ' (faster mode)' : ''); b.className = 'badge live'; }
-    else { b.textContent = 'Practice mode: scripted answers, no AI key'; b.className = 'badge practice'; }
+    else { b.textContent = 'Practice mode: scripted answers' + ({ no_key: ', no AI key', budget: ', spending limit reached', chosen: ', switched on by hand' }[S.cfg.why_practice] || ''); b.className = 'badge practice'; }
     b.hidden = false;
     var m = $('budget'), bud = S.cfg.budget;
     if (bud && (S.cfg.mode === 'live' || bud.exhausted)) {
@@ -310,9 +311,13 @@
     if (!text) { el.hidden = true; return; }
     var at = who === 'sorty' ? S.stage.head : S.stage.person.head_top;
     el.innerHTML = '';
-    var tag = document.createElement('span'); tag.className = 'who'; tag.textContent = who === 'sorty' ? 'Sorty' : 'Person';
+    var thinks = who !== 'sorty' && conf.thinking;      // the person's guess, shown as a thought (see confGuess)
+    var tag = document.createElement('span'); tag.className = 'who'; tag.textContent = who === 'sorty' ? 'Sorty' : thinks ? 'Most people think' : 'Person';
+    if (who !== 'sorty') el.classList.toggle('thinks', thinks);
     el.appendChild(tag); el.appendChild(document.createTextNode(text));
     el.hidden = false; el.classList.remove('beside');
+    el.style.width = ''; el.style.left = '0px';         // measure free of the last position: near the right edge the box would
+    el.style.width = (el.offsetWidth + 1) + 'px';       // shrink after it is placed, wrap into more lines and lose its top
     var half = el.offsetWidth / 2, x = Math.max(half + 24, Math.min(S.W - half - 24, at[0]));
     var y = at[1] - 34;
     if (y - el.offsetHeight < 20) {                    // no room above: sit to the right of it, level with it
@@ -327,6 +332,7 @@
   }
 
   function why(tag, cls, text) {
+    if (confHolds(tag)) return;                         // a mistake was just avoided: that line stays to the end of the run
     var t = $('whyTag'); t.textContent = tag; t.className = 'tag ' + (cls || '');
     $('whyText').textContent = text;
   }
@@ -342,7 +348,8 @@
     var list = $('trace'), tr = (turn && turn.trace) || [];
     list.innerHTML = '';
     if (!tr.length) { var e = document.createElement('li'); e.className = 'empty'; e.textContent = 'Steps appear here as Sorty works.'; list.appendChild(e); return; }
-    var names = { frame: 'camera', look: 'look', think: 'think', ask: 'asks', answer: 'person', show: 'look again', specialist: 'specialist', verdict: 'answer' };
+    var names = { frame: 'camera', look: 'look', think: 'think', ask: 'asks', answer: 'person', show: 'look again', specialist: 'specialist', verdict: 'answer',
+      alert: 'instant alert', guard: 'fast check' };
     tr.forEach(function (s) {
       var li = document.createElement('li'), k = document.createElement('span'), v = document.createElement('span');
       k.className = 'k ' + s.kind; k.textContent = names[s.kind] || s.kind; v.textContent = s.text;
@@ -359,6 +366,7 @@
     beam(false); lit(null); mini('idle'); camScan(false);
     say('sorty', ''); say('person', '');
     $('answerBar').hidden = true;
+    confClear();
   }
 
   /* ---------------------------------------------------------------- the kiosk in the frame */
@@ -441,6 +449,7 @@
     personEnter().then(function () {
       if (!alive(run)) return;
       pose('present'); itemLower(false);
+      confGuess(run);                                   // an item people get wrong: the person first thinks the usual bin
       return sleep(420);
     }).then(function () {
       if (!alive(run)) return;
@@ -464,6 +473,7 @@
     else { liveCard(true); flashCard(); }
     $('person').classList.remove('off'); pose('present');
     beam(true);
+    confGuess(run);
   }
 
   function cancelRun(keepKiosk) {
@@ -472,6 +482,7 @@
     S.run = null;
     if (!keepKiosk) { try { if (S.kiosk) S.kiosk.SortyDebug.idle(); } catch (e) { /* ignore */ } }
     resetStage();
+    confCardOff();
   }
 
   function endRun(run) {
@@ -577,10 +588,11 @@
     if (special) why('Safety', 'alert', 'This never goes in a bin. Sorty says where to take it instead. ' + (v.reason || ''));
     else if (keep) why('Not trash', '', 'Sorty does not bin things that are not trash. ' + (v.reason || ''));
     else why('Answers', 'done', how + ' ' + (v.reason || ''));
+    confVerdict(run, turn);                             // was the common guess a mistake? did the item threaten the whole load?
 
-    sleep(1700).then(function () {
+    sleep(turn.alert ? 2600 : 1700).then(function () {  // an alarm plays out first
       if (!alive(run)) return;
-      if (!binSteps.length) return sleep(2200);                    // nothing goes in a bin: the person keeps it
+      if (!binSteps.length) { confCompare(run); return sleep(2200); }   // nothing goes in a bin: the person keeps it
       var chain = prep.length ? (why('First', 'check', prep.map(function (p) { return p.text; }).join(', then ') + '. Then the bin.'), itemPour()) : Promise.resolve();
       return chain.then(function () {
         if (!alive(run)) return;
@@ -591,7 +603,7 @@
           jobs.push(sleep(380).then(function () { return itemDrop($('item2'), binSteps[1].bin); }));
         }
         return Promise.all(jobs);
-      }).then(function () { return sleep(1500); });
+      }).then(function () { confCompare(run); return sleep(1500); });
     }).then(function () {
       if (!alive(run)) return;
       say('sorty', '');
@@ -615,6 +627,274 @@
     bar.hidden = !opts.length;
   }
 
+  /* ---------------------------------------------------------------- easy to get wrong, and load wreckers */
+  /* Some items look as if they belong in one bin and belong in another. For those the person first "thinks" the bin most
+     people pick (assets/confusion.json when it exists, else assets/confusion_fallback.json), then Sorty answers, and the
+     scene shows whether that common guess would have been a mistake. Items that wreck a whole load of recycling arrive
+     with turn.alert and get an alarm first. Nothing here decides anything: every outcome is read from the steps of
+     Sorty's real verdict. */
+  var CONF_GROUP = 'Easy to get wrong', LOAD_GROUP = 'Wrecks the whole load';
+  var CONF_ORDER = ['coffee_cup_liquid', 'cup_compostable', 'chip_bag', 'pizza_box_greasy', 'plastic_fork', 'battery_aa', 'vape', 'plastic_bag', 'carton_empty'];
+  var LOAD_IDS = ['battery_aa', 'smartphone', 'vape', 'plastic_bag', 'tied_bag_mixed'];
+  var conf = { fallback: {}, researched: null, thinking: false, cardTimer: 0, alarmTimer: 0, prevented: 0, loads: 0, audio: null };
+
+  function confLoad() {                          // never fails: without the files there is simply no such group
+    return Promise.all([
+      getJSON('assets/confusion_fallback.json').catch(function () { return {}; }),
+      getJSON('assets/confusion.json').catch(function () { return null; })
+    ]).then(function (r) {
+      conf.fallback = r[0] || {}; conf.researched = r[1];
+      if (!r[1]) setTimeout(confRetry, 60000);   // the researched file may still be on its way: look once more
+    });
+  }
+  function confRetry() {
+    getJSON('assets/confusion.json').then(function (j) {
+      if (!j || typeof j !== 'object') return;
+      conf.researched = j;
+      if (S.scenarios.length) { buildTray(); markCard(S.run && !S.run.over ? S.run.id : null); }
+    }).catch(function () { /* still not there: the stand-in file stays in use */ });
+  }
+  function confLabel(id) {
+    if (id === 'special') return 'special drop-off';
+    if (id === 'keep') return 'keep it';
+    var b = S.bins[id];
+    return b ? (b.label && b.label.en) || b.id : String(id);
+  }
+  /* The entry for one scenario: the researched one wins, the stand-in fills what it leaves out. */
+  function confOf(id) {
+    if (!id || String(id).charAt(0) === '_') return null;
+    var f = conf.fallback[id], r = conf.researched ? conf.researched[id] : null;
+    if (!r || typeof r !== 'object') r = null;
+    if (!f || typeof f !== 'object') f = null;
+    if (r && f && LOAD_IDS.indexOf(id) >= 0 && r.people_guess !== 'recycle') {         // for load wreckers the story is the recycling bin:
+      var fits = String(r.stat || '').toLowerCase().indexOf('recycl') >= 0;             // a researched figure stays only if it covers recycling too
+      r = fits ? { people_guess: f.people_guess, thought: f.thought, mistake: f.mistake, stat: r.stat, source: r.source, url: r.url } : null;
+    }
+    var e = r || f;
+    if (!e) return null;
+    var guess = e.people_guess, same = f && f.people_guess === guess;
+    if (!S.bins[guess] || !S.stage || !S.stage.bins[guess]) return null;                // a bin this station does not have
+    return { people_guess: guess,
+      thought: e.thought || (same && f.thought) || ('This goes in ' + confLabel(guess) + ', right?'),
+      mistake: e.mistake || (same && f.mistake) || '',
+      stat: e.stat || '', source: e.source || '', url: e.url || '' };
+  }
+
+  /* --- tray --- */
+  function confGroupOf(sc) {
+    if (LOAD_IDS.indexOf(sc.id) >= 0) return LOAD_GROUP;
+    return confOf(sc.id) ? CONF_GROUP : (sc.group || 'Items');
+  }
+  function confGroupClass(g) { return g === LOAD_GROUP ? ' loadgroup' : g === CONF_GROUP ? ' confused' : ''; }
+  function confTrayOrder(groups, order) {        // the two groups lead the tray, each in its own fixed order
+    [[CONF_GROUP, CONF_ORDER], [LOAD_GROUP, LOAD_IDS]].forEach(function (p) {
+      var g = p[0], want = p[1], i = order.indexOf(g);
+      if (i < 0) return;
+      order.splice(i, 1); order.unshift(g);
+      groups[g].sort(function (a, b) { var ia = want.indexOf(a.id), ib = want.indexOf(b.id); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib); });
+    });
+  }
+  function confMark(card, sc, g) {
+    var e = confOf(sc.id), load = g === LOAD_GROUP;
+    if (!e && !load) return;
+    var m = document.createElement('i'); m.className = 'mark' + (load ? ' stop' : ''); m.textContent = load ? '!' : '?';
+    card.appendChild(m);
+    card.title = (load ? 'Wrecks a whole load of recycling. ' : 'Easy to get wrong. ') + (e ? e.mistake : (sc.why || ''));
+  }
+
+  /* --- the common guess, while the person shows the item and Sorty is looking --- */
+  function confGuess(run) {
+    if (!alive(run) || run.kind !== 'demo' || run.conf) return;
+    var e = confOf(run.id);
+    if (!e) return;
+    run.conf = { e: e, guess: e.people_guess, outcome: null, sorty: [], shown: false };
+    conf.thinking = true;
+    try { say('person', e.thought); } finally { conf.thinking = false; }
+    confMarker(run, false);
+  }
+  function confMarker(run, wrong) {              // dashed path from the item to the guessed bin, and a badge at that bin
+    var bin = S.stage.bins[run.conf.guess], to = bin.opening, el = $('item'), hands = S.stage.person.hands;
+    var x0 = hands[0] + Math.min((el._w || 200) / 2, 120) + 18, y0 = hands[1], x1 = to[0], y1 = to[1];
+    var cx = (x0 + x1) / 2, cy = Math.min(y0, y1) - Math.max(110, Math.abs(x1 - x0) * 0.16);
+    var a = Math.atan2(y1 - cy, x1 - cx), fx = $('guessFx'), b = $('guessBadge');
+    function pt(da, d) { return (x1 + Math.cos(a + da) * d).toFixed(1) + ',' + (y1 + Math.sin(a + da) * d).toFixed(1); }
+    fx.setAttribute('viewBox', '0 0 ' + S.W + ' ' + S.H);
+    $('guessArc').setAttribute('d', 'M' + x0.toFixed(1) + ' ' + y0.toFixed(1) + ' Q' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ' ' + x1.toFixed(1) + ' ' + y1.toFixed(1));
+    $('guessHead').setAttribute('points', [pt(0, 20), pt(2.5, 36), pt(-2.5, 36)].join(' '));
+    fx.classList.add('on'); fx.classList.toggle('wrong', !!wrong);
+    $('guessIcon').textContent = wrong ? '✕' : '?';
+    $('guessText').textContent = wrong ? 'Common mistake' : 'Common guess';
+    b.classList.toggle('wrong', !!wrong);
+    b.style.left = to[0] + 'px'; b.style.top = (to[1] - (bin.opening_ry || 50) - 30) + 'px';
+    b.hidden = false;
+  }
+  function confMarkerOff() {
+    var fx = $('guessFx'), b = $('guessBadge');
+    fx.classList.remove('on'); fx.classList.remove('wrong');
+    b.hidden = true; b.classList.remove('wrong');
+  }
+
+  /* --- Sorty's answer: was the common guess a mistake, and did the item threaten the whole load? --- */
+  function confVerdict(run, turn) {
+    var v = turn.verdict || {}, steps = v.steps || [], c = run.conf, out = null, bins = [];
+    var al = turn.alert && typeof turn.alert === 'object' ? turn.alert : null;
+    steps.forEach(function (s) { if (s.kind === 'bin' && S.bins[s.bin] && bins.indexOf(s.bin) < 0) bins.push(s.bin); });
+    var prep = steps.some(function (s) { return s.kind === 'prep'; });
+    var special = steps.some(function (s) { return s.kind === 'special'; }), keep = steps.some(function (s) { return s.kind === 'keep'; });
+    if (c) {
+      if (special || keep || bins.length > 1 || (bins.length === 1 && bins[0] !== c.guess)) out = 'mistake';   // not the bin most people pick
+      else if (bins.length === 1 && prep) out = 'step';                                                         // right bin, but a step comes first
+      c.outcome = out;
+      c.sorty = bins.length ? bins : special ? ['special'] : keep ? ['keep'] : [];
+      var bubble = $('sayPerson');               // the thought stays a moment beside Sorty's answer, then goes
+      if (bubble.classList.contains('thinks') && !bubble.hidden) {
+        clearTimeout(sayTimers.person);
+        sayTimers.person = setTimeout(function () { if (bubble.classList.contains('thinks')) bubble.hidden = true; }, 1600);
+      }
+      if (out === 'mistake') confMarker(run, true); else confMarkerOff();     // when Sorty agrees, nothing is claimed
+    }
+    if (al) confAlarm(al);
+    if (al || out === 'mistake') confCount(!!al);
+    if (al) confStrip('Load protected', 'alert', (al.why || 'This would have wrecked the whole load.') + confCaught(al), c && c.e, true);
+    else if (out === 'mistake') confStrip('Prevented', 'done', 'Common mistake avoided:', c.e);
+    else if (out === 'step') confStrip('First step', 'check', 'Right bin, but most people skip the first step.', c.e);
+    run.held = !!(al || out);                    // these lines stay on the strip to the end of the run
+  }
+  function confHolds(tag) {
+    var r = S.run;
+    return !!(r && !r.over && r.held && (tag === 'First' || tag === 'Ready'));
+  }
+  /* The line under the stage: the lead, then the researched figure when there is one (else the plain sentence),
+     then the source as a small link that opens in a new tab. */
+  function confStrip(tag, cls, lead, e, leadOnly) {
+    why(tag, cls, lead + (e && !e.stat && !leadOnly ? ' ' + e.mistake : ''));
+    var box = $('whyText');
+    if (e && e.stat) { var st = document.createElement('b'); st.className = 'stat'; st.textContent = ' ' + e.stat; box.appendChild(st); }
+    if (e && e.source) {
+      var u = String(e.url || ''), ok = u.indexOf('https://') === 0 || u.indexOf('http://') === 0;
+      var sm = document.createElement('small'); sm.className = 'src'; sm.appendChild(document.createTextNode(' Source: '));
+      var a = document.createElement(ok ? 'a' : 'span'); a.textContent = e.source;
+      if (ok) { a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+      sm.appendChild(a); box.appendChild(sm);
+    }
+  }
+  function confSecs(o) { return o && typeof o.ms === 'number' && isFinite(o.ms) && o.ms >= 0 ? (o.ms / 1000).toFixed(1) : ''; }
+  function confCaught(al) {
+    var s = confSecs(al), by = al.source === 'scripted' ? ' (scripted, practice mode)' : al.source ? ' by the ' + al.source : '';
+    return s ? ' Caught in ' + s + ' s' + by + '.' : '';
+  }
+
+  /* --- the alarm for an item that wrecks a whole load: about two and a half seconds, then the usual ending --- */
+  function confAlarm(al) {
+    var at = S.stage.lens || S.stage.head, a = $('alarm'), chip = $('stopChip'), s = confSecs(al);
+    a.style.setProperty('--ax', at[0] + 'px'); a.style.setProperty('--ay', at[1] + 'px');
+    a.hidden = false;
+    $('stopWord').textContent = String(al.label || 'Stop').toUpperCase();
+    $('stopTime').textContent = s ? 'caught in ' + s + ' s' : 'caught at once';
+    chip.style.left = (at[0] + 30) + 'px'; chip.style.top = (at[1] + 48) + 'px';
+    chip.hidden = false;
+    $('saySorty').classList.add('urgent');
+    confBeep();
+    clearTimeout(conf.alarmTimer);
+    conf.alarmTimer = setTimeout(confAlarmOff, 2500);
+  }
+  function confAlarmOff() {
+    clearTimeout(conf.alarmTimer);
+    $('alarm').hidden = true; $('stopChip').hidden = true; $('saySorty').classList.remove('urgent');
+  }
+  function confBeep() {                          // two short low beeps, only while the sound is on
+    if (!S.sound) return;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      var ctx = conf.audio || (conf.audio = new AC());
+      if (ctx.state === 'suspended' && ctx.resume) { var p = ctx.resume(); if (p && p.catch) p.catch(function () {}); }
+      [0, 0.27].forEach(function (at) {
+        var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + 0.03 + at;
+        o.type = 'square'; o.frequency.value = 196;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.15, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.19);
+        o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.21);
+      });
+    } catch (e) { /* no sound is fine */ }
+  }
+
+  /* --- counters in the top bar, kept for this browser session --- */
+  function confCount(alert) {
+    conf.prevented++; if (alert) conf.loads++;
+    try { window.sessionStorage.setItem('sorty.prevented', conf.prevented + ',' + conf.loads); } catch (e) { /* private mode */ }
+    confCounters(true, alert);
+  }
+  function confCounters(pop, alert) {
+    var a = $('saved'), b = $('loads');
+    a.textContent = 'Mistakes prevented: ' + conf.prevented; a.hidden = !conf.prevented;
+    b.textContent = 'Loads protected: ' + conf.loads; b.hidden = !conf.loads;
+    if (!pop) return;
+    (alert ? [a, b] : [a]).forEach(function (el) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); });
+  }
+  (function () {
+    try {
+      var p = String(window.sessionStorage.getItem('sorty.prevented') || '').split(',');
+      conf.prevented = parseInt(p[0], 10) || 0; conf.loads = parseInt(p[1], 10) || 0;
+    } catch (e) { /* private mode */ }
+    confCounters(false);
+  })();
+
+  /* --- the comparison at the end of a run where the common guess was a mistake: about four seconds, then it fades --- */
+  function confCompare(run) {
+    var c = run && run.conf, box = $('versus');
+    if (!alive(run) || !c || c.outcome !== 'mistake' || c.shown) return;
+    c.shown = true;
+    box.innerHTML = '';
+    box.appendChild(confSide('no', 'Most people', [c.guess], '✕'));
+    box.appendChild(confSide('yes', 'Sorty', c.sorty, '✓'));
+    box.classList.remove('fade'); box.hidden = false;
+    clearTimeout(conf.cardTimer);
+    conf.cardTimer = setTimeout(function () {
+      box.classList.add('fade');
+      conf.cardTimer = setTimeout(function () { box.hidden = true; box.classList.remove('fade'); }, 650);
+    }, 4000);
+  }
+  function confSide(cls, who, ids, mark) {
+    var side = document.createElement('div'), cap = document.createElement('span'), pick = document.createElement('span'), mk = document.createElement('i');
+    side.className = 'side ' + cls; cap.className = 'cap'; cap.textContent = who; pick.className = 'pick'; mk.className = 'mk'; mk.textContent = mark;
+    pick.appendChild(mk);
+    ids.forEach(function (id, i) {
+      if (i) { var plus = document.createElement('span'); plus.className = 'plus'; plus.textContent = '+'; pick.appendChild(plus); }
+      var chip = document.createElement('b'); chip.className = 'chip'; chip.textContent = confLabel(id);
+      chip.style.background = S.bins[id] ? S.bins[id].color : id === 'special' ? '#B7791F' : '#57606A';   // each bin in its own colour
+      pick.appendChild(chip);
+    });
+    side.appendChild(cap); side.appendChild(pick);
+    return side;
+  }
+  function confCardOff() {
+    var box = $('versus');
+    clearTimeout(conf.cardTimer);
+    box.hidden = true; box.classList.remove('fade');
+  }
+  function confClear() {                         // what a run drew on the stage; the comparison card goes when the next run starts
+    confMarkerOff(); confAlarmOff();
+    $('sayPerson').classList.remove('thinks');
+  }
+
+  /* For checking the scene without the brain: SortyShowcase.fake('chip_bag', turn) plays one item with a hand-made
+     verdict turn. It never talks to the server, so it costs nothing. */
+  function confFake(id, turn, wait) {
+    var sc = S.byId[id];
+    if (!sc || !turn) return null;
+    cancelRun();
+    var run = S.run = { id: id, sc: sc, kind: 'demo', turns: 1, over: false, key: keyOf(sc.frames.initial), photo: sc.frames.initial };
+    run.done = new Promise(function (res) { run.finish = res; });
+    markCard(id);
+    resetStage();
+    setItem($('item'), run.key, run.photo);
+    why('Walks up', '', sc.title + '. ' + (sc.why || ''));
+    $('person').classList.remove('off'); pose('present'); beam(true);
+    confGuess(run);
+    sleep(wait == null ? 1500 : wait).then(function () { if (alive(run)) { renderTrace(turn); verdict(run, turn); } });
+    return run.done;
+  }
+
   /* ---------------------------------------------------------------- tray and controls */
   function buildTray() {
     var list = $('trayList'), groups = {}, order = [];
@@ -623,13 +903,14 @@
       return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
     });
     sorted.forEach(function (sc) {
-      var g = sc.group || 'Items';
+      var g = confGroupOf(sc);
       if (!groups[g]) { groups[g] = []; order.push(g); }
       groups[g].push(sc);
     });
+    confTrayOrder(groups, order);
     list.innerHTML = '';
     order.forEach(function (g) {
-      var wrap = document.createElement('div'); wrap.className = 'group';
+      var wrap = document.createElement('div'); wrap.className = 'group' + confGroupClass(g);
       var name = document.createElement('span'); name.textContent = g; wrap.appendChild(name);
       groups[g].forEach(function (sc) {
         var key = keyOf(sc.frames.initial), meta = S.items[key];
@@ -640,6 +921,7 @@
         th.appendChild(img);
         var nm = document.createElement('span'); nm.className = 'name'; nm.textContent = sc.title;
         card.appendChild(th); card.appendChild(nm);
+        confMark(card, sc, g);
         card.addEventListener('click', function () { stopTour(); leaveCamera(); startRun(sc.id); });
         wrap.appendChild(card);
       });
@@ -675,6 +957,7 @@
     $('person').classList.remove('off'); pose('present');
     liveCard(true); beam(true);
     if (S.cfg.mode === 'live') why('Your camera', 'look', 'Hold a real object up to your webcam, then press the sensor button or the Space key.');
+    else if (S.cfg.why_practice && S.cfg.why_practice !== 'no_key') why('Practice mode', 'alert', 'Practice mode is on, so Sorty is not really looking at your object: its answers are scripted.');
     else why('Practice mode', 'alert', 'No AI key is set, so Sorty is not really looking at your object: its answers are scripted. Put the key in sorty/.env and reload this page to try it for real.');
     sensorLabel();
   }
@@ -760,12 +1043,16 @@
   });
 
   /* Practice mode ends by itself: once a key is saved in sorty/.env the server goes live, and so does this page. */
+  function reloadIfModeChanged(c) {            // a key was added, the budget ran out, or practice mode was switched by hand
+    if (c.mode === S.cfg.mode) return false;
+    window.location.reload(); return true;
+  }
   setInterval(function () {
     if (!S.cfg || (S.run && !S.run.over)) return;
     var fast = $('optFast'), was = fast && fast.checked;
     getJSON('/api/config').then(function (c) {
-      if (c.mode !== S.cfg.mode) { window.location.reload(); return; }      // a key was added, or the budget ran out
-      S.cfg.budget = c.budget;
+      if (reloadIfModeChanged(c)) return;
+      S.cfg.budget = c.budget; S.cfg.why_practice = c.why_practice;
       if (!fast || fast.checked === was) {      // not when Faster mode was switched meanwhile: its own answer is the newer one
         S.cfg.model = c.model; S.cfg.profile = c.profile;
         if (fast) fast.checked = !!(c.profile && c.profile.name === 'fast');
@@ -887,7 +1174,55 @@
     });
   })();
 
-  window.SortyShowcase = { state: function () { return { ready: S.kioskReady, run: S.run && { id: S.run.id, kind: S.run.kind, turns: S.run.turns, over: S.run.over }, base: S.base, poses: S.hasPoses, lit: S.litOk, items: Object.keys(S.items).length, scenarios: S.scenarios.length }; }, start: startRun, cancel: cancelRun };
+  /* ---------------------------------------------------------------- practice mode by hand */
+  /* For when the connection fails during a demo: this switch asks the server for scripted answers (POST /api/mode),
+     and for the AI again later. The server decides, and a change of mode reloads the page the same way a new key or a
+     used-up budget does. It stands alone: besides its own checkbox it only reads S.cfg, keeps the server's reason for
+     practice mode there, and writes to the badge and the explanation strip. */
+  (function () {
+    var box = $('optPractice'), sending = false;
+    if (!box) return;
+    var label = box.parentNode, tip = label.title;
+    var WHY = {                                // why Sorty is not using the AI: the server's word, then plain words
+      no_key: 'there is no AI key yet. Put the key in sorty/.env and Sorty switches to the AI by itself.',
+      budget: 'the AI spending limit is used up. That lasts until the server is restarted with a higher limit.',
+      forced: 'the server was started in practice mode. That lasts until it is restarted without that setting.'
+    };
+    function reflect() {                       // the tick, the lock and the tooltip follow what the server last said
+      if (!S.cfg || sending) return;
+      var reason = S.cfg.mode === 'live' ? null : S.cfg.why_practice;
+      var locked = reason === 'forced' || reason === 'budget';         // only a restart of the server ends these two
+      box.checked = S.cfg.mode !== 'live';
+      box.disabled = locked;
+      label.title = locked ? 'Practice mode stays on: ' + WHY[reason] : tip;
+    }
+    setInterval(reflect, 300);                 // on load, and after every look at the server's settings
+    box.addEventListener('change', function () {
+      if (!S.cfg || sending) { box.checked = !box.checked; return; }     // still loading, or the last change is on its way
+      var live = !box.checked, old = false;
+      sending = true;
+      fetch('/api/mode', {
+        method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: live ? 'live' : 'practice' })
+      }).then(function (r) {
+        old = r.status === 404;                // a server started before this switch existed does not know the address
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function (c) {
+        if (reloadIfModeChanged(c)) return true;                         // the page reloads: leave the tick as the person set it
+        S.cfg.why_practice = c.why_practice; setBadge();
+        if (live) why('Practice mode', 'alert', 'Sorty stays in practice mode: ' + (WHY[c.why_practice] || 'the server could not switch to the AI.'));
+      }).catch(function () {
+        why('Problem', 'alert', old ? 'Practice mode could not be switched: this Sorty server was started before the switch was added. Restart the server and try again.'
+          : 'Practice mode could not be switched: the Sorty server did not answer properly. Is it still running?');
+      }).then(function (leaving) { if (!leaving) { sending = false; reflect(); } });   // puts the tick where the server says it is
+    });
+    label.addEventListener('click', function (e) {                       // after a mouse click, Space stays free for the sensor
+      if (e.detail) setTimeout(function () { box.blur(); }, 0);          // (a click on the words moves the focus a moment later)
+    });
+  })();
+
+  window.SortyShowcase = { state: function () { return { ready: S.kioskReady, run: S.run && { id: S.run.id, kind: S.run.kind, turns: S.run.turns, over: S.run.over }, base: S.base, poses: S.hasPoses, lit: S.litOk, items: Object.keys(S.items).length, scenarios: S.scenarios.length }; }, start: startRun, cancel: cancelRun, fake: confFake };
 
   init();
 })();

@@ -1,0 +1,105 @@
+{
+  "_note": "Stand-in for confusion.json (the researched file). Same shape, but on purpose no statistics and no sources: plain, generally true sentences only. Where both files have an entry, the researched one is used.",
+  "coffee_cup_liquid": {
+    "people_guess": "recycle",
+    "thought": "It's paper, so recycling?",
+    "mistake": "Paper cups are often put in recycling, but most programs refuse them because of the plastic lining.",
+    "stat": "", "source": "", "url": ""
+  },
+  "pizza_box_greasy": {
+    "people_guess": "recycle",
+    "thought": "Cardboard goes in recycling, right?",
+    "mistake": "Greasy pizza boxes are often put in recycling, but grease and stuck-on food spoil the paper they are mixed with.",
+    "stat": "", "source": "", "url": ""
+  },
+  "pizza_box_moldy": {
+    "people_guess": "recycle",
+    "thought": "Just a pizza box, so recycling?",
+    "mistake": "A closed pizza box looks like clean cardboard, but old food and mold inside spoil the paper around it.",
+    "stat": "", "source": "", "url": ""
+  },
+  "chip_bag": {
+    "people_guess": "recycle",
+    "thought": "Shiny like foil, so recycling?",
+    "mistake": "Chip bags look like foil, but they are plastic and metal layers fused together, which recycling plants cannot separate.",
+    "stat": "", "source": "", "url": ""
+  },
+  "cup_compostable": {
+    "people_guess": "recycle",
+    "thought": "Clear plastic cup, so recycling?",
+    "mistake": "Compostable cups look just like plastic ones, but they are made from plants and do not belong with recyclable plastic.",
+    "stat": "", "source": "", "url": ""
+  },
+  "plastic_fork": {
+    "people_guess": "recycle",
+    "thought": "It's plastic, so recycling?",
+    "mistake": "Plastic cutlery is often put in recycling, but it is too small and light for the sorting machines and ends up as waste.",
+    "stat": "", "source": "", "url": ""
+  },
+  "clamshell_food": {
+    "people_guess": "recycle",
+    "thought": "Plastic box, so recycling?",
+    "mistake": "Takeout boxes often go into recycling with leftovers still inside, and the food spoils what is around them.",
+    "stat": "", "source": "", "url": ""
+  },
+  "greasy_napkin": {
+    "people_guess": "recycle",
+    "thought": "Paper napkins, so recycling?",
+    "mistake": "Used napkins are often put in recycling because they are paper, but they are too dirty and their fibres too short to recycle.",
+    "stat": "", "source": "", "url": ""
+  },
+  "spray_can_not_empty": {
+    "people_guess": "recycle",
+    "thought": "A metal can, so recycling?",
+    "mistake": "Spray cans that still hold product are often put in recycling, but under pressure they can burst or catch fire.",
+    "stat": "", "source": "", "url": ""
+  },
+  "clear_bottle_half_full": {
+    "people_guess": "recycle",
+    "thought": "Bottle goes in recycling, done?",
+    "mistake": "Bottles often go into recycling with drink still inside, and the liquid soaks the paper and cardboard around them.",
+    "stat": "", "source": "", "url": ""
+  },
+  "soda_can_liquid": {
+    "people_guess": "recycle",
+    "thought": "A can, so recycling?",
+    "mistake": "Cans often go into recycling with drink still inside, and the liquid soaks the paper and cardboard around them.",
+    "stat": "", "source": "", "url": ""
+  },
+  "carton_empty": {
+    "people_guess": "landfill",
+    "thought": "Juice box, that's trash?",
+    "mistake": "Empty cartons are often thrown in the trash, although many recycling programs take them.",
+    "stat": "", "source": "", "url": ""
+  },
+  "battery_aa": {
+    "people_guess": "recycle",
+    "thought": "It's metal, so recycling?",
+    "mistake": "Batteries are often dropped into recycling because they are metal, but they can start fires in trucks and sorting plants.",
+    "stat": "", "source": "", "url": ""
+  },
+  "smartphone": {
+    "people_guess": "recycle",
+    "thought": "Metal and glass, so recycling?",
+    "mistake": "Old phones are often put in recycling bins, but their batteries can catch fire when they are crushed in trucks and sorting plants.",
+    "stat": "", "source": "", "url": ""
+  },
+  "vape": {
+    "people_guess": "recycle",
+    "thought": "Metal and plastic, so recycling?",
+    "mistake": "Disposable vapes are often tossed into recycling, but each hides a lithium battery that can start fires in trucks and sorting plants.",
+    "stat": "", "source": "", "url": ""
+  },
+  "plastic_bag": {
+    "people_guess": "recycle",
+    "thought": "Plastic bag, so recycling?",
+    "mistake": "Plastic bags are often put in recycling bins, but they wrap around the sorting machines and bring the line to a stop.",
+    "stat": "", "source": "", "url": ""
+  },
+  "tied_bag_mixed": {
+    "people_guess": "recycle",
+    "thought": "All bagged up, so recycling?",
+    "mistake": "Tied bags are often put in recycling, but sorting plants do not open them, so everything inside goes to waste.",
+    "stat": "", "source": "", "url": ""
+  }
+}

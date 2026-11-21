@@ -27,6 +27,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); over
 .btn:focus-visible, .card:focus-visible, .ans:focus-visible { outline: 3px solid #79B8FF; outline-offset: 2px; }
 .toggle { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); cursor: pointer; padding: 0 4px; }
 .toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+.toggle:has(input:disabled) { opacity: .6; cursor: default; }      /* a switch that cannot be changed right now; its tooltip says why */
 /* voice chooser: a labelled dropdown that sits in the row of buttons */
 .voice { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); cursor: pointer; padding: 0 0 0 4px; }
 .voice select { font: inherit; font-size: 14px; color: var(--text); background: #21262D; border: 1px solid var(--line); border-radius: 8px;
@@ -213,4 +214,99 @@ body.cam-on #camBox { max-height: 30vh; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mini-idle i, .mini-scan::before, .mini-show::before, #beam.on, #camBox.scan::after { animation: none; }
+}
+
+/* ---------- easy to get wrong: the common guess, the load-wrecker alarm, the comparison ---------- */
+/* top bar counters */
+.badge.saved { color: #7EE2A8; border-color: #23633F; background: #10291C; font-weight: 700; }
+.badge.loads { color: #FFB38A; border-color: #7A3B1D; background: #3A1D10; font-weight: 700; }
+.badge.pop { animation: badgePop .7s ease-out; }
+@keyframes badgePop { 0% { transform: scale(1); } 35% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
+/* the dashed path from the item to the bin most people pick (stage coordinates, so everything is large) */
+#guessFx { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; opacity: 0;
+  transition: opacity .3s; filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
+#guessFx.on { opacity: 1; }
+#guessArc { stroke: #F59E0B; stroke-width: 13; stroke-linecap: round; stroke-dasharray: 30 28; animation: guessMarch .9s linear infinite; }
+#guessHead { fill: #F59E0B; }
+@keyframes guessMarch { to { stroke-dashoffset: -58; } }
+#guessFx.wrong { animation: guessFade 2.4s ease forwards; }
+#guessFx.wrong #guessArc { stroke: #E5484D; animation: none; }
+#guessFx.wrong #guessHead { fill: #E5484D; }
+@keyframes guessFade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+
+.guess-badge { position: absolute; transform: translate(-50%, -100%); display: flex; align-items: center; gap: 16px; padding: 14px 28px 16px 16px;
+  border-radius: 30px; background: #F5A524; color: #1B1300; font-size: 42px; line-height: 1.04; font-weight: 800;
+  box-shadow: 0 14px 34px rgba(0,0,0,.3); }
+.guess-badge[hidden] { display: none; }
+.guess-badge i { flex: none; width: 70px; height: 70px; border-radius: 50%; background: #1B1300; color: #F5A524; display: grid; place-items: center;
+  font-style: normal; font-size: 48px; line-height: 1; }
+.guess-badge span { width: min-content; }                 /* one word per line keeps it as narrow as a bin */
+.guess-badge::after { content: ""; position: absolute; left: 50%; bottom: -22px; margin-left: -20px; border: 22px solid transparent; border-bottom: 0;
+  border-top-color: #F5A524; }
+.guess-badge.wrong { background: #D1242F; color: #fff; animation: badgeHit .5s ease-out; }
+.guess-badge.wrong i { background: #fff; color: #D1242F; }
+.guess-badge.wrong::after { border-top-color: #D1242F; }
+@keyframes badgeHit { 0% { transform: translate(-50%, -100%) scale(1); } 30% { transform: translate(-50%, -100%) scale(1.22); } 100% { transform: translate(-50%, -100%) scale(1); } }
+
+/* the person's guess, said as a thought */
+.say.by-person.thinks { max-width: 640px; background: #FFF6DF; border: 6px dashed #F5A524; font-style: italic; }
+.say.by-person.thinks::after { border-top-color: #F5A524; }
+.say.by-person.thinks.beside::after { border-right-color: #F5A524; border-top-color: transparent; }
+
+/* the alarm for items that wreck a whole load */
+#alarm { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none;
+  box-shadow: inset 0 0 0 24px #E5484D, inset 0 0 280px 70px rgba(229,72,77,.8);
+  background: radial-gradient(circle at var(--ax, 60%) var(--ay, 15%), rgba(255,40,40,.75) 0, rgba(255,40,40,.3) 230px, transparent 560px);
+  animation: alarmPulse .42s ease-in-out infinite alternate; }
+#alarm[hidden] { display: none; }
+@keyframes alarmPulse { from { opacity: .3; } to { opacity: 1; } }
+.stop-chip { position: absolute; transform: translate(-50%, 0); padding: 20px 48px 24px; border-radius: 36px; background: #D1242F; color: #fff;
+  text-align: center; white-space: nowrap; box-shadow: 0 0 0 10px rgba(255,255,255,.92), 0 22px 60px rgba(209,36,47,.6);
+  animation: stopIn .35s cubic-bezier(.2,1.5,.4,1) both; }
+.stop-chip[hidden] { display: none; }
+.stop-chip b { display: block; font-size: 124px; line-height: 1; letter-spacing: 6px; font-weight: 900; }
+.stop-chip span { display: block; font-size: 44px; font-weight: 700; margin-top: 8px; }
+@keyframes stopIn { from { transform: translate(-50%, 0) scale(.3); opacity: 0; } to { transform: translate(-50%, 0) scale(1); opacity: 1; } }
+.say.by-sorty.urgent { background: #C4161C; }                /* (not "alarm": that name is the full-stage overlay) */
+.say.by-sorty.urgent::after { border-top-color: #C4161C; }
+.say.by-sorty.urgent.beside::after { border-right-color: #C4161C; border-top-color: transparent; }
+
+/* the comparison at the end: what most people do, what Sorty said */
+.versus { position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%); display: flex; align-items: stretch; border-radius: 42px;
+  overflow: hidden; background: #10151C; color: #fff; white-space: nowrap; box-shadow: 0 24px 70px rgba(0,0,0,.42); transition: opacity .6s ease;
+  animation: versusIn .35s ease-out both; }
+.versus[hidden] { display: none; }
+.versus.fade { opacity: 0; }
+@keyframes versusIn { from { transform: translateX(-50%) translateY(60px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+.versus .side { padding: 28px 56px 34px; display: flex; flex-direction: column; gap: 12px; min-width: 560px; }
+.versus .side + .side { border-left: 4px solid #2A313C; }
+.versus .cap { font-size: 36px; font-weight: 600; opacity: .75; letter-spacing: .5px; }
+.versus .pick { display: flex; align-items: center; gap: 20px; font-size: 62px; font-weight: 800; line-height: 1.05; }
+.versus .mk { flex: none; width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 56px; line-height: 1; color: #fff; }
+.versus .no .mk { background: #D1242F; }
+.versus .yes .mk { background: #2DA44E; }
+.versus .chip { padding: 6px 28px 12px; border-radius: 22px; color: #fff; border: 4px solid rgba(255,255,255,.5); }
+.versus .no .chip { text-decoration: line-through; text-decoration-thickness: 6px; text-decoration-color: #FF7B81; }
+.versus .plus { opacity: .7; }
+
+/* the strip under the stage: a figure and where it comes from */
+#whyText .stat { color: #FFD27A; font-weight: 700; }
+#whyText .src { color: var(--muted); font-size: 12px; white-space: nowrap; }
+#whyText .src a { color: #8CC8FF; }
+#trace .k.alert { color: #FF9A9A; } #trace .k.guard { color: #8CC8FF; }
+
+/* tray: the two groups that lead it */
+.group.confused, .group.loadgroup { border: 1px solid #6B5320; border-radius: 10px; background: rgba(245,165,36,.08); padding: 4px 8px 4px 5px; }
+.group.confused:last-child, .group.loadgroup:last-child { border-right: 1px solid #6B5320; }
+.group.confused > span { color: #FFD27A; font-weight: 700; }
+.group.loadgroup { border-color: #8A2A2F; background: rgba(229,72,77,.1); }
+.group.loadgroup:last-child { border-right-color: #8A2A2F; }
+.group.loadgroup > span { color: #FF9A9A; font-weight: 700; }
+.card { position: relative; }
+.card .mark { position: absolute; right: 4px; top: 4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #F5A524; color: #1B1300;
+  font-size: 13px; font-weight: 800; line-height: 20px; font-style: normal; }
+.card .mark.stop { background: #D1242F; color: #fff; }
+@media (prefers-reduced-motion: reduce) {
+  #guessArc, #alarm, .stop-chip, .versus, .badge.pop, .guess-badge.wrong { animation: none; }
 }
