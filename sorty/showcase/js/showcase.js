@@ -376,6 +376,7 @@
         w.SortyDebug.load().catch(function () {}).then(function () {
           closeKioskPanels(); setKioskAutoplay(S.autoplay);
           S.kiosk = w; S.kioskReady = true;
+          syncSoundButton();
         });
       })();
     });
@@ -401,6 +402,12 @@
   function kioskState() { try { return kw().SortyDebug.state(); } catch (e) { return null; } }
   function kioskKey(key, code) {
     try { var w = kw(); w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: key, code: code || '', bubbles: true })); } catch (e) { /* not ready */ }
+  }
+  /* The kiosk remembers "sound off" between visits: show what it is really set to. */
+  function syncSoundButton() {
+    var b = $('btnSound');
+    try { S.sound = !kw().Sorty.voice.isMuted(); } catch (e) { return; }
+    b.textContent = S.sound ? 'Sound on' : 'Sound off'; b.setAttribute('aria-pressed', String(S.sound));
   }
   function closeKioskPanels() {
     try { var d = kw().document, bd = d.getElementById('backdrop'); if (bd && !bd.hidden) bd.click(); } catch (e) { /* not ready */ }
@@ -741,8 +748,7 @@
   $('btnSensor').addEventListener('click', function () { this.blur(); sensorPressed(); });
   $('btnSound').addEventListener('click', function () {
     try { kw().document.getElementById('btnMute').click(); } catch (e) { return; }
-    S.sound = !S.sound;
-    this.textContent = S.sound ? 'Sound on' : 'Sound off'; this.setAttribute('aria-pressed', String(S.sound));
+    syncSoundButton();
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { stopTour(); cancelRun(); if (S.live) cameraIdle(); else why('Ready', '', 'Pick an item below.'); }
