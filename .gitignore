@@ -16,3 +16,6 @@ logs/
 # Blender backups and scratch
 *.blend1
 *.blend2
+
+# Internal notes that must not be published (the repository is public)
+private/
