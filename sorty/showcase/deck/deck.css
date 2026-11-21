@@ -384,3 +384,73 @@ button { font: inherit; }
   .slide.is-active .gallery .tile.bad .q { animation: none; opacity: 0; }
   .slide.is-active .gallery .tile.bad .tag { animation: none; opacity: 1; }
 }
+
+/* ---------- slide 5 "gain": six potential benefits in a 3 by 2 grid (added 21 Nov 2026, 5:16 PM).
+   Every rule here is scoped to that one slide. Number and title share the top row; text and source run full width. ---------- */
+.slide[data-id="gain"] .cards { margin-top: 26px; grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(3, 1fr); gap: 22px 24px; }
+.slide[data-id="gain"] .cards .card { min-height: 0; padding: 22px 30px 18px; display: grid; grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr auto; column-gap: 22px; row-gap: 8px; align-items: center; }
+.slide[data-id="gain"] .cards .card .bignum { margin: 0; font-size: 80px; white-space: nowrap; }
+.slide[data-id="gain"] .cards .card h3 { margin: 0; font-size: 37px; line-height: 1.08; }
+.slide[data-id="gain"] .cards .card p { grid-column: 1 / -1; align-self: start; font-size: 28px; line-height: 1.22; }
+.slide[data-id="gain"] .cards .card .src { grid-column: 1 / -1; align-self: end; margin-top: 0; padding-top: 2px; font-size: 20px; }
+.slide[data-id="gain"] .foot { padding-top: 16px; font-size: 25px; }
+
+/* ---------- slide 4 (id "lanes"): the agents the orchestrator calls, lit one after another while the lane runs ---------- */
+.agents { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.agents span { display: grid; gap: 3px; padding: 9px 16px 11px; border-radius: 18px; background: rgba(14, 17, 22, .07); border: 2px solid transparent; }
+.agents b { font-size: 26px; line-height: 1.1; color: var(--ink); white-space: nowrap; }
+.agents small { font-size: 20px; line-height: 1.15; color: var(--muted); }
+.lanes.run .agents span { transition: background .3s, border-color .3s; background: rgba(31, 111, 235, .12); border-color: rgba(31, 111, 235, .5); }
+.lanes.run .agents span:nth-child(1) { transition-delay: 1.2s; }
+.lanes.run .agents span:nth-child(2) { transition-delay: 2.8s; }
+.lanes.run .agents span:nth-child(3) { transition-delay: 4.4s; }
+
+/* ---------- slides 2 ("fail") and 3 ("built"): the research on show (added 21 Nov 2026, 5:27 PM).
+   Every rule here is scoped to one of those two slides.
+   Slide 2: five survey figures on top, then the three "what exists" cards. Slide 3: picture top right, three evidence groups below. ---------- */
+.slide[data-id="fail"] .headline { font-size: 76px; }
+.slide[data-id="fail"] .stats { order: 1; margin-top: 24px; grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(5, 1fr); gap: 18px; }
+.slide[data-id="fail"] .stat { grid-template-columns: 1fr; align-items: start; align-content: start; gap: 4px; padding: 16px 22px 14px; }
+.slide[data-id="fail"] .stat .num { font-size: 84px; color: #B42318; }
+.slide[data-id="fail"] .stat p { font-size: 26px; line-height: 1.2; }
+.slide[data-id="fail"] .stat .src { margin-top: 8px; font-size: 18px; }
+.slide[data-id="fail"] .cards { order: 2; margin-top: 20px; gap: 22px; }
+.slide[data-id="fail"] .cards .card { min-height: 0; padding: 18px 30px 16px; }
+.slide[data-id="fail"] .cards .card .bignum { margin-bottom: 2px; font-size: 58px; }
+.slide[data-id="fail"] .cards .card h3 { margin-bottom: 8px; font-size: 34px; }
+.slide[data-id="fail"] .cards .card p { font-size: 27px; line-height: 1.22; }
+.slide[data-id="fail"] .cards .card .src { padding-top: 10px; font-size: 19px; }
+.slide[data-id="fail"] .foot { order: 3; margin-top: 0; padding-top: 14px; font-size: 24px; }
+.slide[data-id="fail"] .stats .stat:nth-child(1) { transition-delay: 380ms; }
+.slide[data-id="fail"] .stats .stat:nth-child(2) { transition-delay: 490ms; }
+.slide[data-id="fail"] .stats .stat:nth-child(3) { transition-delay: 600ms; }
+.slide[data-id="fail"] .stats .stat:nth-child(4) { transition-delay: 710ms; }
+.slide[data-id="fail"] .stats .stat:nth-child(5) { transition-delay: 820ms; }
+.slide[data-id="fail"] .cards .card:nth-child(1) { transition-delay: 1100ms; }
+.slide[data-id="fail"] .cards .card:nth-child(2) { transition-delay: 1230ms; }
+.slide[data-id="fail"] .cards .card:nth-child(3) { transition-delay: 1360ms; }
+
+.slide[data-id="built"] { justify-content: flex-start; }
+.slide[data-id="built"] .headline { font-size: 150px; line-height: .92; }
+.slide[data-id="built"] .body { margin-top: 14px; font-size: 30px; line-height: 1.26; max-width: 900px; }
+.slide[data-id="built"] .body li:first-child { font-size: 46px; line-height: 1.08; }
+.slide[data-id="built"] .body li + li { margin-top: 10px; }
+.slide[data-id="built"] .go.sm { margin-top: 20px; padding: 14px 28px; font-size: 30px; border-radius: 24px; }
+.slide[data-id="built"] .go.sm::after { font-size: 34px; }
+.slide[data-id="built"] .hero { right: 120px; top: 96px; width: 700px; height: 400px; }
+.slide[data-id="built"] .hero .frame { border-radius: 34px; }
+.slide[data-id="built"] .hero .chip { padding: 11px 20px; font-size: 24px; border-radius: 20px; }
+.slide[data-id="built"] .hero .c1 { left: -56px; top: 34px; }
+.slide[data-id="built"] .hero .c2 { right: -28px; bottom: 74px; }
+.slide[data-id="built"] .hero .c3 { left: 44px; bottom: -22px; }
+.slide[data-id="built"] .groups { margin-top: auto; display: grid; grid-template-columns: 1fr 1.3fr 1.6fr; gap: 22px; }
+.slide[data-id="built"] .group { display: flex; flex-direction: column; padding: 20px 28px 18px; }
+.slide[data-id="built"] .group h3 { margin: 0 0 6px; font-size: 28px; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); }
+.slide[data-id="built"] .group .bignum { margin: 0 0 6px; font-size: 84px; font-weight: 750; letter-spacing: -.04em; line-height: 1; color: var(--ink); white-space: nowrap; }
+.slide[data-id="built"] .group ul { margin: 0; padding: 0; list-style: none; font-size: 27px; line-height: 1.24; color: var(--soft); }
+.slide[data-id="built"] .group li + li { margin-top: 6px; }
+.slide[data-id="built"] .group li small { display: block; font-size: 18px; line-height: 1.2; color: var(--muted); }
+.slide[data-id="built"] .group .src { margin-top: auto; padding-top: 10px; font-size: 19px; }
+.slide[data-id="built"] .group.psy ul { columns: 2; column-gap: 26px; font-size: 26px; color: var(--ink); }
+.slide[data-id="built"] .group.psy li { break-inside: avoid; margin-top: 0; padding-bottom: 9px; }

@@ -35,9 +35,17 @@
   var build = {
     title: function (s) {
       var chips = s.chips || ['Looks', 'Asks', 'Lights the right bin'], colors = ['#1F6FEB', '#2DA44E', '#24292F'];
+      /* optional evidence groups (slide "built"): a title, a big figure, short lines (a string, or { text, cite }), a source */
+      var groups = (s.groups || []).length ? '<div class="groups">' + s.groups.map(function (g) {
+        return r('group glass ' + (g.tone || ''), '<h3>' + esc(g.title) + '</h3>' +
+          (g.big ? '<div class="bignum">' + esc(g.big) + '</div>' : '') +
+          ((g.lines || []).length ? '<ul>' + g.lines.map(function (l) {
+            return '<li>' + (typeof l === 'string' ? esc(l) : esc(l.text) + (l.cite ? '<small>' + esc(l.cite) + '</small>' : '')) + '</li>';
+          }).join('') + '</ul>' : '') + src(g.source));
+      }).join('') + '</div>' : '';
       return head(s) + list(s) +
         (s.button ? r('', '<a class="go sm" href="' + esc(D.meta.demoUrl || '#') + '" target="_blank" rel="noopener">' + esc(s.button) + '</a>') : '') +
-        (s.showTeam ? r('team', esc(D.meta.team || ''), 'p') : '') +
+        (s.showTeam ? r('team', esc(D.meta.team || ''), 'p') : '') + groups +
         '<div class="hero r" style="--i:2"><div class="frame float" data-depth="12"><img src="' + esc(s.image) + '" alt=""></div>' +
         chips.slice(0, 3).map(function (c, i) {
           return '<span class="chip glass c' + (i + 1) + ' float" data-depth="' + (30 + i * 12) + '"><i style="background:' + colors[i] + '"></i>' + esc(c) + '</span>';
@@ -156,7 +164,9 @@
       var track = '<div class="track"><i class="fill"></i></div>';
       var fastMid = '<p class="q">' + esc(f.text || '') + '</p>' + track +
         (D.alertMeasured ? '<p class="measured"><b>' + esc(s.measuredLabel || 'Alert:') + '</b> ' + esc(D.alertMeasured) + '</p>' : '');
-      var carefulMid = '<div class="stages">' + (c.stages || []).map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' +
+      var carefulMid = ((c.agents || []).length
+          ? '<div class="agents">' + c.agents.map(function (a) { return '<span><b>' + esc(a.name) + '</b><small>' + esc(a.does || '') + '</small></span>'; }).join('') + '</div>'
+          : '<div class="stages">' + (c.stages || []).map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>') +
         (c.text ? '<p class="q">' + esc(c.text) + '</p>' : '') + track +
         (c.result ? '<p class="measured"><b>' + esc(s.measuredLabel || 'Measured:') + '</b> ' + esc(c.result) + '</p>' : '');
       var extra = D.flags && D.flags.orchestratorLine && D.orchestratorLine ? r('extra', esc(D.orchestratorLine), 'p') : '';

@@ -78,7 +78,7 @@ Every figure has a source caption. Figures marked "team" come from the team's ow
   - **4** : moves of the careful model.
   - **3** : requests to a person at most, per item. Enforced in the code.
 - **Speaker notes:**
-  > How it works: a sensor, for now a button, notices an item; the camera takes one picture, and both models start at once. The careful one, run as a LangGraph graph, finds the deciding fact, then picks one of four moves: answer, ask to see another side, look closer, or ask one question. Then one answer with a reason, and the right bin lights up.
+  > How it works: a multi-agent workflow. A sensor notices an item; the camera takes one picture, and two agents start at once: the alert agent and the orchestrator, a LangGraph graph. The orchestrator finds the deciding fact, then picks one of four moves: answer, ask to see another side, call an inspector agent for a closer look, or ask one question. Then one answer with a reason, and the right bin lights up.
 
 ---
 
@@ -95,9 +95,9 @@ Every figure has a source caption. Figures marked "team" come from the team's ow
   - **85 to 97%** : fewer wrong items with a trained helper at the bin. University of British Columbia, 2018.
   - **About $340, and $250 a month** : parts for one bin, and running it on the careful model. Team's estimate on paper; cheaper models are not proven.
 - **Speaker notes:**
-  > Today: one clear answer with a reason, any bin layout, English or Spanish.
+  > Today: one clear answer with a reason, in about a second for the dangerous items.
   >
-  > At scale, a helper at every bin: in one university trial, a trained helper cut wrong items by 85 percent or more.
+  > At scale: fewer fires, sorting lines that keep running, cleaner loads, lower costs. In one university trial, a trained helper at the bin cut wrong items by 85 percent or more.
   >
   > Today's test, computer-made pictures: Sorty 32 of 33 written cases, one look 28. No real camera, no real people, no hardware yet. Thank you.
 

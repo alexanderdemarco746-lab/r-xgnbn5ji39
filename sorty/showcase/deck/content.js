@@ -92,18 +92,26 @@ window.DECK = {
       /* 2. Why current efforts fail: three short points. */
       id: "fail", layout: "cards",
       kicker: "Why current efforts fail",
-      headline: "Nothing stops them at the bin.",
+      headline: "People guess wrong. Nothing stops them.",
+      /* The confusion research: what people believe or do. Every figure and source is copied from
+         showcase/assets/confusion.json (pages opened 21 Nov 2026). Shown above the three cards. */
+      stats: [
+        { value: 55, suffix: "%", label: "of US adults thought compostable items recycle with cans and bottles", source: "Keep America Beautiful / The Harris Poll, 2025" },
+        { value: 61, suffix: "%", label: "of US adults said flexible plastic can go in their curbside bin", source: "Republic Services Consumer Recycling Survey, 2022" },
+        { value: 46, suffix: "%", label: "put disposable coffee cups in the recycling bin in a sorting study", source: "Barnett, Klotz, Hancock and Attari, The Conversation, 2023" },
+        { value: 68, suffix: "%", label: "of young vape users threw empties in the trash; 13% in recycling", source: "Truth Initiative, 2022" },
+        { value: 36, suffix: "%", label: "of US consumers throw batteries in the trash; 30% mix them with recyclables", source: "UL Standards & Engagement, 2024" }
+      ],
       cards: [
-        { big: "Signs", title: "do not stop a wrong item at the bin.", text: "", source: "One university trial: signs made no clear difference (UBC Science, 2018)" },
-        { big: "One look", title: "cannot see what is hidden.", text: "", source: "" },
-        { big: "Smart bins", title: "cost $10,000 or more each.", text: "", source: "One camera bin on sale: $10,000 to $15,000 per installation, plus yearly fees (Waste Dive, Jul 2025)" }
+        { big: "Signs", title: "made no clear difference.", text: "A trained helper at the bin cut wrong items by 85% or more.", source: "University of British Columbia, 2018 (Zelenika, Moreau and Zhao): one campus festival" },
+        { big: "One look", title: "cannot see what is hidden.", text: "A one-look camera got 28 of 33 right, and 9 of the 14 hidden cases.", source: "Our test, 21 Nov 2026: same model, rules and pictures as Sorty" },
+        { big: "Smart bins", title: "cost $10,000 or more each.", text: "One camera bin on sale: $10,000 to $15,000 per installation, plus yearly fees.", source: "Waste Dive, Jul 2025" }
       ],
       meters: [
-        { label: "One-look camera: all 33 test cases", value: 28, total: 33 },
-        { label: "One-look camera: the 14 hidden cases", value: 9, total: 14, tone: "bad" }
+        /* the one-look comparison (28 of 33; 9 of 14 hidden) now sits in the "One look" card above */
       ],
-      foot: "Our test, 21 Nov 2026: same model, rules and pictures as Sorty. Blender renders, one run.",
-      notes: "Signs and labels do not stop them at the bin. A camera that looks once cannot see what is hidden: in our own comparison it got 28 of 33 right, and only 9 of the 14 cases where the answer is hidden. And the smart bins that exist are costly: one camera bin sells for 10 to 15 thousand dollars per installation, plus yearly fees."
+      foot: "Surveys are US-wide and bin rules differ from place to place. Our test: Blender-rendered pictures, one run.",
+      notes: "People guess wrong at the bin, and the surveys say so. 55 percent of US adults thought compostable items go with cans and bottles. 61 percent said flexible plastic can go in the curbside bin. In one sorting study, 46 percent put coffee cups in recycling. And for the dangerous items: 68 percent of young vape users threw empties in the trash, and 36 percent of consumers throw batteries in the trash. What exists does not fix it. In one university trial signs made no clear difference, while a trained helper at the bin cut wrong items by 85 percent or more. A camera that looks once cannot see what is hidden: in our own test it got 28 of 33 right, and only 9 of the 14 cases where the answer is hidden. And the smart bins on sale are costly: one camera bin sells for 10 to 15 thousand dollars per installation, plus yearly fees."
     },
 
     {
@@ -111,11 +119,33 @@ window.DECK = {
       id: "built", layout: "title",
       kicker: "What we built",
       headline: "Sorty",
-      body: ["A camera assistant that fits any bin.", "An instant alert for load-wreckers, plus a careful check that looks again and asks."],
+      body: ["An instant alert for load-wreckers.", "A fast alert model says Stop in about a second, even for someone in a hurry. A careful check then finds the right bin, on any bin."],
+      /* Three evidence groups under the picture. A line is a string, or { text, cite } where cite is shown in small print.
+         Cheap: business/COST_ESTIMATE.md. Effective: sorty/tests/results (REPORT.md, REPORT_lg_full.md, GUARD.md), run 21 Nov 2026.
+         Psychology: the README table "Designed around how people behave at a bin"; the three references are classic
+         published findings cited from memory, not re-read today. */
+      groups: [
+        { title: "Cheap", big: "$340",
+          lines: ["of parts per bin, on paper", "Camera bin on sale: $10,000 to $15,000 installed"],
+          source: "Our estimate, seller prices of 21 Nov 2026; Waste Dive, Jul 2025" },
+        { title: "Effective", big: "10 of 10",
+          lines: ["load-wreckers caught, about 1 s each", "0 false alarms in 52", "Sorty 32 of 33; one look 28", "35 of 36 on LangGraph"],
+          source: "Our tests, 21 Nov 2026: Blender-rendered pictures, one run" },
+        { title: "Built on psychology", tone: "psy",
+          lines: [
+            { text: "One answer, never a list", cite: "Hick, 1952: more choices, slower decisions" },
+            { text: "Arrow, colour, word and voice agree" },
+            { text: "Eight words or fewer" },
+            { text: "Always a short \"because\"", cite: "Langer, Blank and Chanowitz, 1978" },
+            { text: "No blame" },
+            { text: "Ends with a thank-you", cite: "Kahneman and colleagues, 1993: endings shape the memory" }
+          ],
+          source: "Published findings, cited from memory" }
+      ],
       chips: ["Instant alert", "Looks again, and asks", "Fits any bin"],
       image: "img/hero.jpg",
       button: "Open the live demo",
-      notes: "We built Sorty: a camera assistant that fits any bin. It gives an instant alert for the few items that wreck a load, plus a careful check that looks again and asks. [Open the live demo here if there is time.]"
+      notes: "We built Sorty. First, an instant alert: a fast alert model says Stop in about a second for the few items that wreck a load, even when someone is in a hurry. Then a careful check that looks again and asks, for everything else, on any bin. It is cheap: about 340 dollars of parts per bin on paper, against 10 to 15 thousand dollars for a camera bin on sale. It is effective in today's tests, on computer-made pictures in a single run: the alert caught 10 of 10 load-wreckers with no false alarm in 52, Sorty got 32 of 33 where a one-look camera got 28, and 35 of 36 on the LangGraph orchestrator. And it is built on how people behave: one answer, never a list; arrow, colour, word and voice agree; eight words or fewer; always a short because; no blame; a thank-you at the end. Honest note: the three psychology references (Hick 1952; Langer, Blank and Chanowitz 1978; Kahneman and colleagues 1993) are classic published findings cited from memory, not re-read today. The University of British Columbia trial on the previous slide was read today. [Open the live demo here if there is time.]"
     },
 
     {
@@ -205,34 +235,48 @@ window.DECK = {
          The measured alert numbers go into DECK.alertMeasured at the top of this file. */
       /* 4. How it works. */
       id: "lanes", layout: "lanes",
-      kicker: "How it works",
-      headline: "One camera frame. Two models at once.",
+      kicker: "How it works: a multi-agent workflow",
+      headline: "One camera frame. Four AI agents.",
       sensor: { title: "Sensor", text: "Item in range. Today: a button." },
       frame: { image: "img/battery_aa.png", text: "One camera frame" },
-      fast: { title: "Fast lane: instant alert", model: "Claude Haiku 5.5",
+      /* The multi-agent workflow. Four AI agents, each with one job:
+         1 the alert agent (fast lane), 2 the orchestrator (a LangGraph graph), and the two it calls:
+         3 the inspector agent (closer look for grease, food, mold) and 4 the label agent (codes and marks).
+         The orchestrator also turns to the person: one question, or "show me another side". */
+      fast: { title: "1 · Alert agent", model: "Claude Haiku 5.5",
               text: "One question: does this wreck a load?",
               end: "Stop!", endNote: "about 1 second" },
-      careful: { title: "Careful lane: the right bin", model: "Claude Opus 5.5",
-                 stages: ["Looks again", "Asks", "Runs checks"],
+      careful: { title: "2 · Orchestrator agent", model: "Claude Opus 5.5 · LangGraph",
+                 agents: [
+                   { name: "3 · Inspector agent", does: "Closer look: grease, food, mold" },
+                   { name: "4 · Label agent", does: "Reads codes and compostable marks" },
+                   { name: "The person", does: "One question, or another view" }
+                 ],
                  result: "32 of 33 test cases right.",
                  end: "One answer", endNote: "about 5 seconds" },
       measuredLabel: "Measured:",
       foot: "Our tests: Blender-rendered pictures, one picture per wrecker, not yet on a real bin camera.",
-      notes: "The moment the system activates, two models start on the same camera frame. The fast lane is a small, fast vision model with one narrow question: is this one of the few things that wreck a load? When it is sure, the screen turns red and says Stop, in about a second. Otherwise the careful model answers as usual: it looks again, asks, and runs specialist checks. In our test the alert fired on 10 of 10 showings of load-wreckers, with no false alarm in 52 showings of ordinary items. Those are rendered pictures, not a real bin camera."
+      notes: "The moment the system activates, two agents start on the same camera frame: this is a multi-agent workflow, four AI agents with one job each. The alert agent is a small, fast vision model with one narrow question: is this one of the few things that wreck a load? When it is sure, the screen turns red and says Stop, in about a second. Otherwise the orchestrator agent, a LangGraph graph, answers as usual: it asks the person or looks again, and it calls two more agents, an inspector for grease, food and mold, and a label reader. In our test the alert fired on 10 of 10 showings of load-wreckers, with no false alarm in 52 showings of ordinary items. Those are rendered pictures, not a real bin camera."
     },
 
     {
       /* 5. Potential benefits, with only sourced or measured numbers, and the honest limits as small print. */
       id: "gain", layout: "cards",
       kicker: "Potential benefits",
-      headline: "Fewer fires and jams. Cleaner loads. Lower cost.",
+      headline: "What this could fix at scale.",
+      /* Six benefits in a 3 by 2 grid. Red numbers are the problem as it is today (each with its source);
+         green numbers are what a helper at the bin could change. Every figure is in pitch/WRECKER_FACTS.md,
+         the "Evidence and sources" part of pitch/PITCH_3MIN.md, or business/COST_ESTIMATE.md. */
       cards: [
-        { big: "10 of 10", title: "Fewer fires and jams", text: "Load-wreckers stopped by the alert. No false alarm in 52 ordinary showings.", source: "Our test, 21 Nov 2026", tone: "bad" },
-        { big: "32 of 33", title: "Cleaner loads", text: "Test cases sorted right. A one-look camera: 28.", source: "Our test, 21 Nov 2026", tone: "good" },
-        { big: "$340", title: "Lower cost", text: "Of parts per bin, on paper. It fits the bins already there.", source: "Our cost estimate, seller prices of 21 Nov 2026" }
+        { big: "430", title: "Fewer fires", text: "reported fires at waste and recycling sites in one year. Our alert caught 10 of 10 load-wreckers in today's test.", source: "Fire Rover count for 2024, US and Canada (Resource Recycling, Mar 2025); our test, 21 Nov 2026", tone: "bad" },
+        { big: "3 h", title: "Sorting lines that keep running", text: "of shutdowns a day, at most, in Tampa's sorting: caused by bags, film and other tangling items.", source: "City of Tampa, Recycling FAQs, updated Feb 2025", tone: "bad" },
+        { big: "36%", title: "Cleaner loads", text: "of what went into Tampa's recycling did not belong there. In today's test Sorty got 32 of 33 right; one look, 28.", source: "City of Tampa, news release, Aug 2020; our test, 21 Nov 2026", tone: "bad" },
+        { big: "$10", title: "Lower costs", text: "to insure $100 of recycling plant, up from under 20 cents. Fewer fires could ease that.", source: "NWRA and RRS, news release, Jan 2024", tone: "bad" },
+        { big: "85%", title: "A helper at every bin", text: "fewer wrong items, or more, with a trained helper at the bin. Signs alone made no clear difference.", source: "University of British Columbia, 2018 (one campus festival)", tone: "good" },
+        { big: "$340", title: "Fits the bins already there", text: "of parts per bin, on paper. A camera bin on sale today costs $10,000 to $15,000 per installation.", source: "Our estimate, seller prices of 21 Nov 2026; Waste Dive, Jul 2025", tone: "good" }
       ],
-      foot: "Limits: Blender-rendered test pictures, one run. Not yet on a real bin: no hardware built, no real users.",
-      notes: "The potential: fewer fires and jams, because the alert fired on 10 of 10 showings of load-wreckers with no false alarm. Cleaner loads: 32 of 33 test cases right. Lower cost: about 340 dollars of parts per bin on paper, on bins a site already has. The honest limit: these are computer-made test pictures, and it has not yet been on a real bin. Thank you."
+      foot: "Limits: this is potential, not results. Our test pictures are Blender renders, one run. Not yet on a real bin; no hardware built.",
+      notes: "At scale this goes after a very big problem: 430 reported fires at waste and recycling sites in one year, Tampa's sorting stopped for up to three hours a day by tangling items, and in 2020, 36 percent of what went into Tampa's recycling did not belong there. Sorty could mean fewer fires, sorting lines that keep running, cleaner loads and lower costs, by putting a helper at every bin for about 340 dollars of parts on the bins already there. That is potential, not a result: our tests used computer-made pictures, and nothing has been on a real bin yet. Thank you."
     },
 
     {
