@@ -92,6 +92,7 @@ CONTAMINATION_SYSTEM = """You are a surface-contamination inspector for a waste-
 How to judge:
 - Grease on paper or cardboard shows as darker, slightly translucent patches with soft edges that follow no print pattern. Shadows have a direction and stay the same hue; printing has crisp edges and repeats.
 - Food shows as crumbs, smears, sauce, cheese, rice, bones, peel or anything with texture sitting on the surface.
+- Mold shows as fuzzy, slightly raised patches in white, grey-green, blue-green or black, on food or on the cardboard itself. Any mold counts as severity "heavy", whatever its size, and must be named in the evidence.
 - Estimate how much of the inspected surface is affected, as a whole-number percentage.
 - Severity: "none" when the surface is clean; "light" for a few drops, a thin film or a couple of crumbs (still fine for recycling); "heavy" for soaked-in grease, stuck-on food or pooled liquid.
 - If the surface in question is not actually visible in the frame, say so with visible "no" rather than guessing.

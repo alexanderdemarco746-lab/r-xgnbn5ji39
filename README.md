@@ -47,7 +47,7 @@ flowchart TD
 
 - The brain is Claude with vision (`claude-opus-5-5` by default), called through the official Anthropic SDK. Each step it picks exactly one move.
 - The rules of the station (which bin is where, what goes in it) live in one JSON file per station, so the same brain runs a 3-bin or a 2-bin layout: `sorty/brain/rules/`.
-- Guardrails are enforced in code, not left to the model: a hard budget of requests to the person, only bins that exist can be named, every interaction ends with an answer even if the network fails, and nothing a person says is treated as an instruction.
+- Some limits are enforced in code, not left to the model: at most three requests to the person per item, only bins that exist on the station can be named, a spending cap, and a fallback message ("Please check the labels on the bins") when the AI cannot be reached. One rule lives only in the AI's instructions and has not been tested: what a person says is treated as information about the item, never as an instruction.
 - Specialist checks are pluggable. The two built in are focused inspection passes; a trained detector running on the bin's own computer can replace either one (see `sorty/brain/specialists.py`).
 
 ## Designed around how people behave at a bin
@@ -71,10 +71,10 @@ People decide where to throw something in two or three seconds, usually while wa
 
 Two layers of tests live in `sorty/tests/`:
 
-- `test_offline.py`: 107 checks of the decision loop, turn format, request budget, failure handling and server. No key or network needed.
+- `test_offline.py`: 113 checks of the decision loop, turn format, request limit, failure handling and server. No key or network needed. They check the plumbing, not the AI's judgement.
 - `run_scenarios.py`: live runs against a bank of 32 scenarios (`scenarios.json`). Each scenario has camera frames and a hidden truth, for example "the can is half full". A simulated person answers Sorty's questions from that truth, and the final answer is graded. It also compares Sorty with a one-look camera that uses the same model and rules but may not look again or ask.
 
-Status: the offline checks pass. The live scenario run has not been done yet, because it needs an API key; when it runs, its report is written to `sorty/tests/results/REPORT.md`. The test pictures are Blender renders, and nothing has been tested with a real camera on a real bin.
+Status: the offline checks pass. With the live AI, only a handful of items have been run through the full loop (half-full soda can, greasy pizza box, clean pizza box, banana peel), on Blender-rendered pictures; the logs are in `sorty/tests/results/`. On the default model every completed run came out right. The cheapest model tried skipped the soda-can question. The full 32-case run with the one-look comparison has not been done, so there is no accuracy figure, and nothing has been tested with a real camera on a real bin.
 
 ```
 cd sorty
