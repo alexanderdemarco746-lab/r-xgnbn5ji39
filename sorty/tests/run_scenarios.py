@@ -45,7 +45,7 @@ def b64(name: str) -> str:
 
 
 # ------------------------------------------------------------------ running
-def run_one(brain: Brain, llm: LLM, sc: dict, interactive: bool = True) -> dict:
+def run_one(brain: Brain, llm: LLM | None, sc: dict, interactive: bool = True) -> dict:
     """Play one scenario through to its end and return the record."""
     person = sc.get("person", {})
     frames = sc["frames"]
@@ -75,7 +75,9 @@ def run_one(brain: Brain, llm: LLM, sc: dict, interactive: bool = True) -> dict:
                 text = script[min(spoken, len(script) - 1)]
                 spoken += 1
             else:
-                text = simulated_answer(llm, brain.s, person.get("facts", ""), turn["say"], lang)
+                own = getattr(brain, "simulated_answer", None)      # the LangGraph brain answers on its own provider
+                text = own(person.get("facts", ""), turn["say"], lang) if own else \
+                    simulated_answer(llm, brain.s, person.get("facts", ""), turn["say"], lang)
             payload, shown = {"type": "answer", "text": text}, text
         transcript.append({"person": shown})
         turn = brain.reply(turn["session_id"], payload)
@@ -137,10 +139,11 @@ def grade(expect: dict, record: dict, station: dict, behaviour: bool = True) -> 
         named = b in bins or any(w and w in words for w in labels.get(b, []))
         if not named:
             problems.append(f"did not send anything to '{b}'")
-    if expect.get("prep_mentions") and not any(k in words for k in expect["prep_mentions"]):
+    prep_words = " ".join(s.get("text", "") for s in turn.get("verdict", {}).get("steps", []) if s["kind"] == "prep").lower()
+    if expect.get("prep_mentions") and not any(k in prep_words for k in expect["prep_mentions"]):
         problems.append("did not tell the person to empty it first")
     for b, keys in (expect.get("prep_mentions_for") or {}).items():
-        if b in bins and not any(k in words for k in keys):
+        if b in bins and not any(k in prep_words for k in keys):
             problems.append(f"chose '{b}' without telling the person to empty it first")
     if expect.get("dest_mentions") and not any(k in words for k in expect["dest_mentions"]):
         problems.append("did not say where it should go instead")
@@ -256,13 +259,15 @@ def main() -> int:
     ap.add_argument("--verbose", action="store_true", help="print each conversation")
     ap.add_argument("--speed", default="", help="'fast' turns on fast mode")
     ap.add_argument("--no-prearm", action="store_true", help="no automatic check on a new view")
+    ap.add_argument("--orchestrator", default="", help="'langgraph' runs the LangGraph brain")
+    ap.add_argument("--provider", default="", help="'google' runs on Gemini (LangGraph brain only)")
     args = ap.parse_args()
 
-    if not has_api_key():
-        print("No API key found. Put it in sorty/.env as ANTHROPIC_API_KEY=... and run again.")
-        return 2
-
     settings = get_settings()
+    if args.orchestrator:
+        settings.orchestrator = args.orchestrator
+    if args.provider:
+        settings.provider = args.provider
     if args.station:
         settings.station_id = args.station
     if args.model:
@@ -275,6 +280,20 @@ def main() -> int:
         settings.prearm_specialist = False
     settings.api_retries = 6
     settings.request_timeout_s = 90.0
+    use_graph = settings.orchestrator == "langgraph"
+    if use_graph:
+        from brain import providers
+        from brain.graph_brain import GraphBrain
+        if not providers.has_key_for(settings):
+            name = "GEMINI_API_KEY" if providers.resolve(settings)[0] == "google" else "ANTHROPIC_API_KEY"
+            print(f"No API key found. Put it in sorty/.env as {name}=... and run again.")
+            return 2
+    elif settings.provider or settings.model.startswith("gemini"):
+        print("Gemini needs the LangGraph brain: add --orchestrator langgraph.")
+        return 2
+    elif not has_api_key():
+        print("No API key found. Put it in sorty/.env as ANTHROPIC_API_KEY=... and run again.")
+        return 2
     station = load_station(settings.station_id)
     expect_key = "expect" if settings.station_id == "3bin" else f"expect_{settings.station_id}"
 
@@ -296,9 +315,16 @@ def main() -> int:
         print("No runnable scenarios (are the images in tests/images yet?). Skipped:", ", ".join(skipped) or "none")
         return 2
 
-    llm = LLM(settings)
-    brain = Brain(settings, llm=llm, station=station)
-    print(f"Running {len(chosen)} scenarios on {settings.model} (effort {settings.effort}), station {settings.station_id} ...", flush=True)
+    if use_graph:
+        llm = None
+        brain = GraphBrain(settings, station=station)
+        usage, model_label = brain.usage, brain.model_id
+    else:
+        llm = LLM(settings)
+        brain = Brain(settings, llm=llm, station=station)
+        usage, model_label = llm.usage, settings.model
+    print(f"Running {len(chosen)} scenarios on {model_label} (effort {settings.effort}, {settings.orchestrator} brain), "
+          f"station {settings.station_id} ...", flush=True)
 
     def play(sc: dict) -> dict:
         try:
@@ -340,7 +366,11 @@ def main() -> int:
         one_look = copy.copy(settings)
         one_look.max_person_turns = 0
         one_look.max_specialist_calls = 0
-        base_brain = Brain(one_look, llm=llm, specialists={}, station=station)
+        if use_graph:
+            base_brain = GraphBrain(one_look, station=station, specialists={})
+            base_brain.usage = usage                      # one running total for the whole run
+        else:
+            base_brain = Brain(one_look, llm=llm, specialists={}, station=station)
         print("Running the one-look comparison ...", flush=True)
 
         def play_base(sc: dict) -> dict:
@@ -356,9 +386,15 @@ def main() -> int:
         with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
             baseline = list(pool.map(play_base, chosen))
 
-    cost = llm.usage.estimated_cost_usd(settings.model)
-    meta = {"when": time.strftime("%Y-%m-%d %H:%M"), "model": settings.model, "effort": settings.effort,
-            "station": settings.station_id, "cost_usd": cost, "usage": llm.usage.snapshot(), "skipped": skipped}
+    from types import SimpleNamespace
+    from brain import budget
+    snap = usage.snapshot()
+    cost = round(budget.cost_usd(model_label, SimpleNamespace(
+        input_tokens=snap["input"], output_tokens=snap["output"],
+        cache_read_input_tokens=snap["cache_read"], cache_creation_input_tokens=snap["cache_write"])), 4)
+    meta = {"when": time.strftime("%Y-%m-%d %H:%M"), "model": model_label, "effort": settings.effort,
+            "orchestrator": settings.orchestrator,
+            "station": settings.station_id, "cost_usd": cost, "usage": usage.snapshot(), "skipped": skipped}
     RESULTS.mkdir(parents=True, exist_ok=True)
     slim = lambda rows: [{k: v for k, v in r.items() if k != "final"} | {"final_say": r["final"].get("say", ""), "final_type": r["final"]["type"],
                                                                          "verdict": r["final"].get("verdict")} for r in rows]
@@ -371,7 +407,7 @@ def main() -> int:
     if baseline is not None:
         print(f"  One-look camera: {sum(1 for r in baseline if r['passed'])} of {len(baseline)} correct "
               f"(Sorty outcome-only: {sum(1 for r in sorty if r['outcome_ok'])}).", end="")
-    print(f"\nEstimated API cost: ${cost:.2f}   tokens: {llm.usage.snapshot()}")
+    print(f"\nEstimated API cost: ${cost:.2f}   tokens: {usage.snapshot()}")
     if skipped:
         print("Skipped (no image yet):", ", ".join(skipped))
     return 0 if passed == len(sorty) else 1

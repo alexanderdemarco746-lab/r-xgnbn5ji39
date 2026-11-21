@@ -1,2 +1,6 @@
 anthropic>=2.12
 pillow>=11
+# Only for the optional LangGraph orchestrator (SORTY_ORCHESTRATOR=langgraph) and Gemini (SORTY_PROVIDER=google)
+langgraph>=1.2.24
+langchain-anthropic>=1.7.12
+langchain-google-genai>=4.5.2

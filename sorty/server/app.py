@@ -12,6 +12,7 @@ import mimetypes
 import sys
 import threading
 import time
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -23,6 +24,7 @@ if str(ROOT) not in sys.path:
 from brain import Brain, get_settings, has_api_key, load_station  # noqa: E402
 from brain.mock_brain import MockBrain  # noqa: E402
 from brain import budget  # noqa: E402
+from brain import guard as load_guard  # noqa: E402
 from brain.persona import simulated_answer  # noqa: E402
 
 KIOSK_DIR = ROOT / "kiosk"
@@ -67,18 +69,110 @@ class App:
         self.station = load_station(self.settings.station_id)
         self.scenarios = load_scenarios()
         self._forced_mock = force_mock or os.environ.get("SORTY_MODE", "").lower() == "mock"
-        want_mock = self._forced_mock or not has_api_key()
+        self._chosen_mock = False       # practice mode switched on by hand (POST /api/mode): holds until switched off
+        self._budget_used = False       # practice mode because the AI budget ran out: holds until the server restarts
+        self._pool = ThreadPoolExecutor(max_workers=8, thread_name_prefix="sorty")
+        self._guard = None              # the instant alert, built on first use
+        want_mock = self._forced_mock or not self._has_key()
         if want_mock:
             self.brain = MockBrain(self.settings, self.station, self.scenarios)
         else:
-            self.brain = Brain(self.settings, station=self.station)
+            self.brain = self._live_brain()
         self.mode = self.brain.mode
+
+    def _has_key(self) -> bool:
+        """Is there a key for the AI service this setup uses? (Claude, or Gemini with the LangGraph brain.)"""
+        if self.settings.orchestrator == "langgraph":
+            try:
+                from brain import providers
+                if providers.resolve(self.settings)[0] == "google":
+                    return providers.has_gemini_key()
+            except Exception:
+                pass
+        return has_api_key()
+
+    def _live_brain(self):
+        """The careful brain: the classic loop, or the LangGraph one (SORTY_ORCHESTRATOR=langgraph)."""
+        if self.settings.orchestrator == "langgraph":
+            try:
+                from brain.graph_brain import GraphBrain
+                return GraphBrain(self.settings, station=self.station)
+            except Exception as exc:    # packages missing or a setup problem: the classic loop does the same job
+                print(f"LangGraph brain unavailable ({type(exc).__name__}: {exc}); using the classic loop.", flush=True)
+        return Brain(self.settings, station=self.station)
+
+    def guard(self):
+        """The instant alert model, or None when it is switched off or cannot run (no Claude key)."""
+        if not self.settings.guard or self.mode != "live" or not has_api_key():
+            return None
+        if self._guard is None:
+            try:
+                self._guard = load_guard.LoadGuard(self.settings, self.station)
+            except Exception as exc:
+                print(f"Instant alert unavailable ({type(exc).__name__}).", flush=True)
+                self.settings.guard = False
+                return None
+        return self._guard
+
+    def start_session(self, image: str, lang: str = "en", demo: str | None = None) -> dict:
+        """The station has activated. Two models start on the same frame at the same time: the fast
+        guard (is this one of the few things that wreck a whole load?) and the careful brain. If the
+        guard is sure, its alert is the answer and nobody waits for the careful brain."""
+        brain = self.brain
+        if not self.settings.guard:
+            return brain.start(image, lang, demo)
+        if self.mode != "live":
+            # Practice mode: scenarios marked as load-wreckers show the same alert, scripted.
+            sc = self.scenarios.get(demo or "") or {}
+            if sc.get("guard") in load_guard.WRECKERS:
+                time.sleep(0.6)
+                return load_guard.alert_turn(self.station, sc["guard"], sc.get("guard_item", ""), lang, 600, "scripted")
+            return brain.start(image, lang, demo)
+        guard = self.guard()
+        if guard is None:
+            return brain.start(image, lang, demo)
+
+        careful = self._pool.submit(brain.start, image, lang, demo)
+        fast = self._pool.submit(guard.look, image)
+        done, _ = wait([fast, careful], timeout=self.settings.guard_wait_s, return_when=FIRST_COMPLETED)
+        look = fast.result() if fast in done else None
+        if look and look.get("alert"):
+            careful.add_done_callback(lambda f: self._forget(brain, f))     # the careful pass is no longer needed
+            return load_guard.alert_turn(self.station, look["category"], look["item"], lang, look["ms"],
+                                         f"fast check, {guard.model}")
+        turn = careful.result()
+        if look and "error" not in look:
+            note = {"t_ms": look["ms"], "kind": "guard",
+                    "text": f"Fast check ({guard.model}, {look['ms'] / 1000:.1f} s): nothing that wrecks a load"}
+            sess = getattr(brain, "sessions", {}).get(turn.get("session_id"))
+            if sess is not None and isinstance(getattr(sess, "trace", None), list):
+                sess.trace.insert(min(1, len(sess.trace)), note)            # later turns keep the line too
+            if isinstance(turn.get("trace"), list):
+                turn["trace"].insert(min(1, len(turn["trace"])), note)
+            turn["guard"] = {"clear": True, "ms": look["ms"]}
+        return turn
+
+    @staticmethod
+    def _forget(brain, finished) -> None:
+        try:
+            brain.end(finished.result().get("session_id"))
+        except Exception:
+            pass
+
+    def guard_look(self, image: str) -> dict:
+        """One fast look on its own (POST /api/guard): for measuring the alert, or an always-on watch."""
+        guard = self.guard()
+        if guard is None:
+            return {"alert": False, "error": "instant alert is not running"}
+        look = guard.look(image)
+        look["model"] = guard.model
+        return look
 
     def go_live_if_possible(self) -> None:
         """Practice mode ends by itself once an API key has been put in .env: no restart needed."""
-        if self.mode == "live" or self._forced_mock or not has_api_key():
+        if self.mode == "live" or self._forced_mock or self._chosen_mock or not self._has_key():
             return
-        self.brain = Brain(self.settings, station=self.station)
+        self.brain = self._live_brain()
         self.mode = self.brain.mode
         print(f"API key found: switched to the live brain ({self.settings.model}).", flush=True)
 
@@ -88,7 +182,31 @@ class App:
             self.brain = MockBrain(self.settings, self.station, self.scenarios)
             self.mode = self.brain.mode
             self._forced_mock = True
+            self._budget_used = True
             print(f"AI budget used up (about ${budget.spent_usd():.2f}): back to practice mode.", flush=True)
+
+    def why_practice(self) -> str | None:
+        """Why the answers are scripted right now (None while the AI is connected), so the page can explain itself."""
+        if self.mode == "live":
+            return None
+        if self._budget_used:
+            return "budget"
+        if self._forced_mock:
+            return "forced"
+        return "chosen" if self._chosen_mock else "no_key"
+
+    def set_mode(self, name: str) -> dict:
+        """Switch practice mode on or off by hand and return the new config: for when the connection fails.
+        "practice" holds until "live" is asked for. "live" only happens with a key and budget left, and never
+        after a --mock start or a used-up budget: those last until the server is restarted."""
+        if name not in ("practice", "live"):
+            raise ValueError("mode must be one of: practice, live")
+        self._chosen_mock = name == "practice"
+        if self._chosen_mock and self.mode == "live":
+            self.brain = MockBrain(self.settings, self.station, self.scenarios)
+            self.mode = self.brain.mode
+            print("Practice mode switched on by hand: scripted answers, no AI calls.", flush=True)
+        return self.config()        # switching back to the AI, when that is possible, happens in here
 
     def config(self) -> dict:
         self.go_live_if_possible()
@@ -97,7 +215,9 @@ class App:
         return {
             "assistant_name": s.assistant_name,
             "mode": self.mode,
-            "model": s.model if self.mode == "live" else None,
+            "model": getattr(self.brain, "model_id", s.model) if self.mode == "live" else None,
+            "orchestrator": s.orchestrator if self.mode == "live" else None,
+            "guard": {"on": bool(s.guard), "model": s.guard_model if self.mode == "live" else None},
             "lang_default": "en",
             "languages": s.languages,
             "station": {"id": self.station["id"], "name": self.station.get("name", ""), "bins": self.station["bins"]},
@@ -106,6 +226,7 @@ class App:
             "profile": {"name": self.profile, "options": [
                 {"name": name, "label": p["label"], "detail": p["detail"], "model": p["model"]}
                 for name, p in PROFILES.items()]},
+            "why_practice": self.why_practice(),
         }
 
     def set_profile(self, name: str) -> dict:
@@ -162,6 +283,8 @@ class App:
             return person["script"][0]
         if self.mode != "live":
             return self.brain.mock_answer(scenario_id)
+        if hasattr(self.brain, "simulated_answer"):          # the LangGraph brain answers with its own model
+            return self.brain.simulated_answer(person.get("facts", ""), question, sc.get("lang", "en"))
         return simulated_answer(self.brain.llm, self.settings, person.get("facts", ""), question, sc.get("lang", "en"))
 
 
@@ -266,9 +389,14 @@ class Handler(BaseHTTPRequestHandler):
                 if not body.get("image"):
                     self._json(400, {"error": "image is required"})
                     return
-                turn = self.app.brain.start(body["image"], str(body.get("lang") or "en"), body.get("demo_scenario") or None)
+                turn = self.app.start_session(body["image"], str(body.get("lang") or "en"), body.get("demo_scenario") or None)
                 self.app.notify(turn)
                 self._json(200, turn)
+            elif path == "/api/guard":
+                if not body.get("image"):
+                    self._json(400, {"error": "image is required"})
+                    return
+                self._json(200, self.app.guard_look(body["image"]))
             elif len(parts) == 4 and parts[:2] == ["api", "session"] and parts[3] == "reply":
                 turn = self.app.brain.reply(parts[2], body)
                 self.app.notify(turn)
@@ -282,6 +410,13 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/profile":
                 try:
                     cfg = self.app.set_profile(body.get("profile"))
+                except ValueError as exc:
+                    self._json(400, {"error": str(exc)})
+                    return
+                self._json(200, cfg)
+            elif path == "/api/mode":
+                try:
+                    cfg = self.app.set_mode(body.get("mode"))
                 except ValueError as exc:
                     self._json(400, {"error": str(exc)})
                     return

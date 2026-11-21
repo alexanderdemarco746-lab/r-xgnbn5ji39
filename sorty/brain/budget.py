@@ -26,6 +26,9 @@ PRICES = {
     "claude-fable-5-2": (8.00, 40.00, 0.20),
     "claude-sonnet-5-5": (2.00, 10.00, 0.10),
     "claude-haiku-5-5": (0.10, 0.50, 0.01),
+    # Google's paid-tier price through 2026-12-31 (ai.google.dev pricing page, checked 2026-11-21).
+    # On Google's free tier the calls cost nothing; they are still counted at this rate to stay on the safe side.
+    "gemini-3.8-flash": (0.75, 3.75, 0.075),
 }
 CACHE_WRITE_FACTOR = 1.25
 

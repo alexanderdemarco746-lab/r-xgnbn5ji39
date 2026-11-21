@@ -71,11 +71,12 @@ class LLM:
         self.guard_budget = client is None        # a stand-in client (tests) spends nothing and is not tracked
         self.usage = Usage()
 
-    def create(self, *, model: str, effort: str, output_config: dict | None = None, **kwargs):
+    def create(self, *, model: str, effort: str, output_config: dict | None = None,
+               thinking: dict | None = None, max_tokens: int = 16000, **kwargs):
         params = dict(
             model=model,
-            max_tokens=16000,
-            thinking={"type": "adaptive"},
+            max_tokens=max_tokens,
+            thinking=thinking or {"type": "adaptive"},
             output_config={"effort": effort, **(output_config or {})},
             **kwargs,
         )

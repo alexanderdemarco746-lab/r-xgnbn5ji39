@@ -211,7 +211,7 @@
     opts = opts || {};
     enter('idle');
     st.sessionId = null; st.turn = null; st.demo = null; st.demoFrame = null; st.answerLock = false; st.arrows = null;
-    document.body.removeAttribute('data-vkind');
+    document.body.removeAttribute('data-vkind'); document.body.removeAttribute('data-alert');
     markTargets([]);
     liveView();
     stillRing(0);
@@ -269,7 +269,7 @@
     abandon();
     var tk = enter('idle');
     st.armed = false; st.manual = true; st.demo = sc; st.sessionId = null; st.answerLock = false;
-    document.body.removeAttribute('data-vkind');
+    document.body.removeAttribute('data-vkind'); document.body.removeAttribute('data-alert');
     markTargets([]);
     hideBubble(); setChip(''); stillRing(0);
     setHeadline(t('idle_headline')); setSub('');
@@ -549,6 +549,9 @@
       : (v.primary_bin === 'not_trash' || (keeps.length && !targets.length)) ? 'keep'
       : targets.length >= 2 ? 'split' : targets.length === 1 ? 'single' : 'keep';
     document.body.dataset.vkind = layout;
+    // The instant alert: the fast check spotted something that wrecks a whole load (battery, vape, plastic bag...).
+    var alertInfo = turn.alert || null;
+    if (alertInfo) document.body.dataset.alert = alertInfo.harm || 'stop'; else document.body.removeAttribute('data-alert');
     markTargets(layout === 'single' || layout === 'split' ? targets : []);
 
     var root = $('verdict'), body = $('vBody');
@@ -648,6 +651,15 @@
       body.appendChild(kp);
     }
 
+    chip.classList.toggle('alert', !!alertInfo);
+    if (alertInfo) {
+      // red screen, STOP first, and how fast it was caught
+      root.style.setProperty('--vbg', '#B3261E'); root.style.setProperty('--vink', '#fff');
+      chip.insertBefore(el('b', 'stop', alertInfo.label || 'Stop'), chip.firstChild);
+      if (alertInfo.ms) chip.appendChild(el('em', 'fast', (alertInfo.ms / 1000).toFixed(1) + ' s'));
+      chip.hidden = false;
+    }
+
     fitWords();
     placeArrows();
     requestAnimationFrame(placeArrows);
@@ -660,7 +672,8 @@
     bar.style.setProperty('--dur', (hold / 1000) + 's');
     void bar.offsetWidth; bar.classList.add('run');
 
-    if (layout === 'special') voice.earcon.warning();
+    if (alertInfo && voice.earcon.alarm) voice.earcon.alarm();
+    else if (layout === 'special') voice.earcon.warning();
     else if (layout === 'keep') voice.earcon.thanks();
     else voice.earcon.verdict();
 
@@ -744,7 +757,7 @@
     enter('error');
     if (sid) api.end(sid);
     st.sessionId = null;
-    document.body.removeAttribute('data-vkind');
+    document.body.removeAttribute('data-vkind'); document.body.removeAttribute('data-alert');
     markTargets([]);
     hideBubble(); setChip('');
     $('errIcon').innerHTML = icons.eyeoff;

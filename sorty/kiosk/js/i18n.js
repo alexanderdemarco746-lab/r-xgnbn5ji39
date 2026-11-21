@@ -60,7 +60,7 @@
       motion: 'motion', presence: 'presence', still: 'still',
       shortcuts: 'Space scan · M demo · D steps · L language · S sound · F full screen · Esc cancel',
       k_look: 'Look', k_think: 'Think', k_ask: 'Ask', k_answer: 'Answer', k_show: 'Request',
-      k_frame: 'New view', k_specialist: 'Specialist', k_verdict: 'Verdict'
+      k_frame: 'New view', k_specialist: 'Specialist', k_verdict: 'Verdict', k_alert: 'Instant alert', k_guard: 'Fast check'
     },
     es: {
       brand_tag: '¿En qué contenedor?',
@@ -118,7 +118,7 @@
       motion: 'movimiento', presence: 'presencia', still: 'quieto',
       shortcuts: 'Espacio escanear · M demo · D pasos · L idioma · S sonido · F pantalla completa · Esc cancelar',
       k_look: 'Mirar', k_think: 'Pensar', k_ask: 'Preguntar', k_answer: 'Respuesta', k_show: 'Pedir',
-      k_frame: 'Nueva vista', k_specialist: 'Especialista', k_verdict: 'Veredicto'
+      k_frame: 'Nueva vista', k_specialist: 'Especialista', k_verdict: 'Veredicto', k_alert: 'Alerta inmediata', k_guard: 'Revisión rápida'
     }
   };
 

@@ -41,6 +41,13 @@ class Settings:
     speed: str = ""                     # "fast" enables fast mode (costs more)
     use_fallbacks: bool = True          # server-side refusal fallback
     prearm_specialist: bool = True      # run the requested check on a new view before the brain sees it
+    orchestrator: str = "langgraph"     # "langgraph" (brain/graph_brain.py) or "classic" (brain/agent.py); same turns
+    provider: str = ""                  # "" = decide from the model id; "google" forces Gemini
+    gemini_model: str = "gemini-3.8-flash"   # used when the provider is Google and no Gemini model id is given
+    guard: bool = True                  # the instant alert: a fast second model that runs beside the careful one
+    guard_model: str = "claude-haiku-5-5"    # the fastest model: one glance, one narrow question
+    guard_image_px: int = 512           # a small picture is enough to spot a battery or a bag, and is faster
+    guard_wait_s: float = 4.0           # never wait longer than this for the fast look
     station_id: str = "3bin"
     port: int = 8787
     request_timeout_s: float = 45.0
@@ -72,6 +79,11 @@ def get_settings() -> Settings:
     s.specialist_model = env("SORTY_SPECIALIST_MODEL", s.specialist_model)
     s.specialist_effort = env("SORTY_SPECIALIST_EFFORT", s.specialist_effort)
     s.speed = env("SORTY_SPEED", s.speed)
+    s.orchestrator = env("SORTY_ORCHESTRATOR", s.orchestrator)
+    s.provider = env("SORTY_PROVIDER", s.provider)
+    s.gemini_model = env("SORTY_GEMINI_MODEL", s.gemini_model)
+    s.guard = env("SORTY_GUARD", "1") not in ("0", "false", "no")
+    s.guard_model = env("SORTY_GUARD_MODEL", s.guard_model)
     s.prearm_specialist = env("SORTY_PREARM", "1") not in ("0", "false", "no")
     s.use_fallbacks = env("SORTY_FALLBACKS", "1") not in ("0", "false", "no")
     s.station_id = env("SORTY_STATION", s.station_id)

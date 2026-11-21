@@ -1,0 +1,514 @@
+{
+ "summary": {
+  "model": "claude-haiku-5-5",
+  "pictures": 31,
+  "repeat": 2,
+  "wreckers_shown": 10,
+  "wreckers_caught": 10,
+  "ordinary_shown": 52,
+  "false_alarms": 0,
+  "errors": 0,
+  "median_ms": 1049,
+  "slowest_ms": 2768,
+  "cost_usd": 0.0083,
+  "when": "2026-11-21 16:46"
+ },
+ "rows": [
+  [
+   "banana_peel.jpg",
+   "-",
+   "(silent)",
+   "banana peel",
+   1119,
+   "silent, correct"
+  ],
+  [
+   "banana_peel.jpg",
+   "-",
+   "(silent)",
+   "banana peel",
+   1686,
+   "silent, correct"
+  ],
+  [
+   "battery_aa.jpg",
+   "battery",
+   "battery",
+   "two AA batteries",
+   1038,
+   "caught"
+  ],
+  [
+   "battery_aa.jpg",
+   "battery",
+   "battery",
+   "two AA batteries",
+   1140,
+   "caught"
+  ],
+  [
+   "blurry_dark.jpg",
+   "-",
+   "(silent)",
+   "red drink can",
+   1006,
+   "silent, correct"
+  ],
+  [
+   "blurry_dark.jpg",
+   "-",
+   "(silent)",
+   "red drink can",
+   952,
+   "silent, correct"
+  ],
+  [
+   "cardboard_box_clean.jpg",
+   "-",
+   "(silent)",
+   "empty cardboard box",
+   940,
+   "silent, correct"
+  ],
+  [
+   "cardboard_box_clean.jpg",
+   "-",
+   "(silent)",
+   "empty cardboard box",
+   1939,
+   "silent, correct"
+  ],
+  [
+   "carton_empty.jpg",
+   "-",
+   "(silent)",
+   "orange juice carton",
+   932,
+   "silent, correct"
+  ],
+  [
+   "carton_empty.jpg",
+   "-",
+   "(silent)",
+   "orange juice carton",
+   936,
+   "silent, correct"
+  ],
+  [
+   "chip_bag.jpg",
+   "-",
+   "(silent)",
+   "chip bag",
+   1159,
+   "silent, correct"
+  ],
+  [
+   "chip_bag.jpg",
+   "-",
+   "(silent)",
+   "chip bag",
+   1217,
+   "silent, correct"
+  ],
+  [
+   "clamshell_closed.jpg",
+   "-",
+   "(silent)",
+   "white foam takeout container",
+   1228,
+   "silent, correct"
+  ],
+  [
+   "clamshell_closed.jpg",
+   "-",
+   "(silent)",
+   "white foam takeout container",
+   981,
+   "silent, correct"
+  ],
+  [
+   "clamshell_open_food.jpg",
+   "-",
+   "(silent)",
+   "takeout food tray",
+   1010,
+   "silent, correct"
+  ],
+  [
+   "clamshell_open_food.jpg",
+   "-",
+   "(silent)",
+   "takeout food tray",
+   1049,
+   "silent, correct"
+  ],
+  [
+   "clear_bottle_empty.jpg",
+   "-",
+   "(silent)",
+   "plastic water bottle",
+   1082,
+   "silent, correct"
+  ],
+  [
+   "clear_bottle_empty.jpg",
+   "-",
+   "(silent)",
+   "water bottle",
+   1700,
+   "silent, correct"
+  ],
+  [
+   "clear_bottle_half_cola.jpg",
+   "-",
+   "(silent)",
+   "cola plastic bottle",
+   983,
+   "silent, correct"
+  ],
+  [
+   "clear_bottle_half_cola.jpg",
+   "-",
+   "(silent)",
+   "cola bottle",
+   1910,
+   "silent, correct"
+  ],
+  [
+   "coffee_cup_lid.jpg",
+   "-",
+   "(silent)",
+   "paper coffee cup",
+   1013,
+   "silent, correct"
+  ],
+  [
+   "coffee_cup_lid.jpg",
+   "-",
+   "(silent)",
+   "disposable coffee cup",
+   1497,
+   "silent, correct"
+  ],
+  [
+   "cold_cup_bottom_compostable.jpg",
+   "-",
+   "(silent)",
+   "clear plastic cup",
+   934,
+   "silent, correct"
+  ],
+  [
+   "cold_cup_bottom_compostable.jpg",
+   "-",
+   "(silent)",
+   "clear plastic cup",
+   1123,
+   "silent, correct"
+  ],
+  [
+   "cold_cup_bottom_pet.jpg",
+   "-",
+   "(silent)",
+   "clear plastic bottle",
+   1206,
+   "silent, correct"
+  ],
+  [
+   "cold_cup_bottom_pet.jpg",
+   "-",
+   "(silent)",
+   "clear plastic bottle",
+   915,
+   "silent, correct"
+  ],
+  [
+   "cold_cup_side.jpg",
+   "-",
+   "(silent)",
+   "clear plastic cup",
+   1050,
+   "silent, correct"
+  ],
+  [
+   "cold_cup_side.jpg",
+   "-",
+   "(silent)",
+   "clear plastic cup",
+   992,
+   "silent, correct"
+  ],
+  [
+   "empty_scene.jpg",
+   "-",
+   "(silent)",
+   "nothing visible",
+   938,
+   "silent, correct"
+  ],
+  [
+   "empty_scene.jpg",
+   "-",
+   "(silent)",
+   "nothing visible",
+   942,
+   "silent, correct"
+  ],
+  [
+   "glass_bottle_empty.jpg",
+   "-",
+   "(silent)",
+   "green glass bottle",
+   879,
+   "silent, correct"
+  ],
+  [
+   "glass_bottle_empty.jpg",
+   "-",
+   "(silent)",
+   "green glass bottle",
+   1653,
+   "silent, correct"
+  ],
+  [
+   "greasy_napkin.jpg",
+   "-",
+   "(silent)",
+   "crumpled food wrappers",
+   1174,
+   "silent, correct"
+  ],
+  [
+   "greasy_napkin.jpg",
+   "-",
+   "(silent)",
+   "crumpled food wrappers",
+   1009,
+   "silent, correct"
+  ],
+  [
+   "opaque_bottle.jpg",
+   "-",
+   "(silent)",
+   "shampoo bottle",
+   1516,
+   "silent, correct"
+  ],
+  [
+   "opaque_bottle.jpg",
+   "-",
+   "(silent)",
+   "shampoo bottle",
+   1048,
+   "silent, correct"
+  ],
+  [
+   "pizza_box_closed.jpg",
+   "-",
+   "(silent)",
+   "pizza box",
+   1025,
+   "silent, correct"
+  ],
+  [
+   "pizza_box_closed.jpg",
+   "-",
+   "(silent)",
+   "pizza box",
+   947,
+   "silent, correct"
+  ],
+  [
+   "pizza_box_open_clean.jpg",
+   "-",
+   "(silent)",
+   "empty pizza box",
+   1119,
+   "silent, correct"
+  ],
+  [
+   "pizza_box_open_clean.jpg",
+   "-",
+   "(silent)",
+   "empty pizza box",
+   1158,
+   "silent, correct"
+  ],
+  [
+   "pizza_box_open_greasy.jpg",
+   "-",
+   "(silent)",
+   "greasy pizza box",
+   969,
+   "silent, correct"
+  ],
+  [
+   "pizza_box_open_greasy.jpg",
+   "-",
+   "(silent)",
+   "greasy pizza box",
+   1505,
+   "silent, correct"
+  ],
+  [
+   "pizza_box_open_leftovers.jpg",
+   "-",
+   "(silent)",
+   "pizza slices in box",
+   1143,
+   "silent, correct"
+  ],
+  [
+   "pizza_box_open_leftovers.jpg",
+   "-",
+   "(silent)",
+   "pizza slices in box",
+   1845,
+   "silent, correct"
+  ],
+  [
+   "pizza_box_open_moldy.jpg",
+   "-",
+   "(silent)",
+   "moldy pizza in box",
+   938,
+   "silent, correct"
+  ],
+  [
+   "pizza_box_open_moldy.jpg",
+   "-",
+   "(silent)",
+   "open pizza box with moldy pizza",
+   994,
+   "silent, correct"
+  ],
+  [
+   "plastic_bag.jpg",
+   "plastic_bag",
+   "plastic_bag",
+   "white plastic shopping bag",
+   1506,
+   "caught"
+  ],
+  [
+   "plastic_bag.jpg",
+   "plastic_bag",
+   "plastic_bag",
+   "white plastic shopping bag",
+   1316,
+   "caught"
+  ],
+  [
+   "plastic_fork.jpg",
+   "-",
+   "(silent)",
+   "white plastic fork and knife",
+   979,
+   "silent, correct"
+  ],
+  [
+   "plastic_fork.jpg",
+   "-",
+   "(silent)",
+   "plastic fork and knife",
+   967,
+   "silent, correct"
+  ],
+  [
+   "smartphone.jpg",
+   "electronics",
+   "electronics",
+   "smartphone",
+   969,
+   "caught"
+  ],
+  [
+   "smartphone.jpg",
+   "electronics",
+   "electronics",
+   "smartphone",
+   1090,
+   "caught"
+  ],
+  [
+   "soda_can.jpg",
+   "-",
+   "(silent)",
+   "cola can",
+   1268,
+   "silent, correct"
+  ],
+  [
+   "soda_can.jpg",
+   "-",
+   "(silent)",
+   "cola can",
+   949,
+   "silent, correct"
+  ],
+  [
+   "spray_can.jpg",
+   "-",
+   "(silent)",
+   "spray paint can",
+   1179,
+   "silent, correct"
+  ],
+  [
+   "spray_can.jpg",
+   "-",
+   "(silent)",
+   "spray paint can",
+   1028,
+   "silent, correct"
+  ],
+  [
+   "tied_bag.jpg",
+   "bagged_trash",
+   "bagged_trash",
+   "tied plastic trash bag",
+   923,
+   "caught"
+  ],
+  [
+   "tied_bag.jpg",
+   "bagged_trash",
+   "bagged_trash",
+   "tied plastic bag",
+   1119,
+   "caught"
+  ],
+  [
+   "two_items_peel_bottle.jpg",
+   "-",
+   "(silent)",
+   "banana peel",
+   1139,
+   "silent, correct"
+  ],
+  [
+   "two_items_peel_bottle.jpg",
+   "-",
+   "(silent)",
+   "banana peel",
+   906,
+   "silent, correct"
+  ],
+  [
+   "vape.jpg",
+   "vape",
+   "vape",
+   "disposable vape pen",
+   2768,
+   "caught"
+  ],
+  [
+   "vape.jpg",
+   "vape",
+   "vape",
+   "disposable vape pen",
+   2341,
+   "caught"
+  ]
+ ]
+}

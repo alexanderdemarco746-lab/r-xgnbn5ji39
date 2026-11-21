@@ -344,6 +344,7 @@ def test_server():
         check("server: config", status == 200 and cfg["mode"] == "mock" and len(cfg["station"]["bins"]) == 3 and cfg["timeouts"]["answer_s"] > 0)
         check("server: starts on the standard AI setup and offers two", cfg["profile"]["name"] == "standard"
               and sorted(o["name"] for o in cfg["profile"]["options"]) == ["fast", "standard"], str(cfg.get("profile")))
+        check("server: says practice mode was forced at the start", cfg["why_practice"] == "forced", str(cfg.get("why_practice")))
         status, cfg = call("POST", "/api/profile", {"profile": "fast"})
         check("server: faster setup chosen", status == 200 and cfg["profile"]["name"] == "fast", str(cfg)[:200])
         check("server: faster setup changes the model and drops the pre-armed check",
@@ -356,6 +357,16 @@ def test_server():
               and app.profile == "standard" and app.settings.model == "claude-opus-5-5", str(err))
         status, err = call("POST", "/api/profile", {})
         check("server: missing setup name is a 400", status == 400 and "error" in err, str(err))
+        status, cfg = call("POST", "/api/mode", {"mode": "live"})
+        check("server: a forced practice start cannot be switched to live", status == 200 and cfg["mode"] == "mock"
+              and cfg["why_practice"] == "forced" and app.mode == "mock", str(cfg)[:200])
+        status, cfg = call("POST", "/api/mode", {"mode": "practice"})
+        check("server: asking it for practice mode is answered and changes nothing", status == 200 and cfg["mode"] == "mock"
+              and cfg["why_practice"] == "forced", str(cfg)[:200])
+        status, err = call("POST", "/api/mode", {"mode": "offline"})
+        check("server: unknown mode is a 400", status == 400 and "error" in err and app.mode == "mock", str(err))
+        status, err = call("POST", "/api/mode", {})
+        check("server: missing mode is a 400", status == 400 and "error" in err, str(err))
         status, turn = call("POST", "/api/session", {"image": frame(), "lang": "en", "demo_scenario": "soda_can_empty"})
         check("server: start session", status == 200 and turn["type"] == "ask", str(turn)[:200])
         status, turn2 = call("POST", f"/api/session/{turn['session_id']}/reply", {"type": "answer", "text": "no"})
@@ -381,10 +392,193 @@ def test_server():
         server.server_close()
 
 
+def test_mode_switch():
+    """The practice-mode switch (App.set_mode). Any real key is hidden and the live brain is replaced by a
+    stand-in for the whole test, so nothing here can reach the AI."""
+    import contextlib
+    import os
+    import server.app as server_app
+    from brain import budget
+
+    class LiveStandIn:                      # takes the place of the live brain: reads no key, builds no client
+        mode = "live"
+
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+    has = {"key": False, "budget_left": True}
+    saved = (server_app.has_api_key, server_app.Brain, budget.exhausted, os.environ.get("SORTY_MODE"))
+    saved_orchestrator = os.environ.get("SORTY_ORCHESTRATOR")
+    os.environ["SORTY_ORCHESTRATOR"] = "classic"    # the stand-in below takes the place of the classic brain
+    server_app.has_api_key = lambda: has["key"]
+    server_app.Brain = LiveStandIn
+    budget.exhausted = lambda: not has["budget_left"]
+    os.environ["SORTY_MODE"] = "live"       # a practice-mode setting in the environment would decide everything below
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):         # the server announces each change of mode
+            app = server_app.App(force_mock=False)
+            cfg = app.config()
+            check("mode switch: no key means practice mode", cfg["mode"] == "mock" and cfg["why_practice"] == "no_key", str(cfg["why_practice"]))
+            cfg = app.set_mode("practice")
+            check("mode switch: practice mode chosen by hand", cfg["mode"] == "mock" and cfg["why_practice"] == "chosen")
+            cfg = app.set_mode("live")
+            check("mode switch: without a key it stays in practice mode", cfg["mode"] == "mock" and cfg["why_practice"] == "no_key"
+                  and isinstance(app.brain, MockBrain))
+
+            has["key"] = True               # from here a key is "there", and the stand-in is what going live builds
+            cfg = app.config()
+            check("mode switch: a key ends practice mode by itself", cfg["mode"] == "live" and cfg["why_practice"] is None
+                  and isinstance(app.brain, LiveStandIn))
+            cfg = app.set_mode("practice")
+            check("mode switch: by hand, the scripted brain takes over with the scenarios", cfg["mode"] == "mock"
+                  and cfg["why_practice"] == "chosen" and isinstance(app.brain, MockBrain) and app.brain.scenarios == app.scenarios)
+            check("mode switch: the next config request does not undo it", app.config()["mode"] == "mock")
+            cfg = app.set_mode("live")
+            check("mode switch: and back to the AI", cfg["mode"] == "live" and cfg["why_practice"] is None
+                  and isinstance(app.brain, LiveStandIn))
+
+            app.set_mode("practice")
+            has["budget_left"] = False      # the budget runs out while practice mode is on
+            cfg = app.set_mode("live")
+            check("mode switch: no budget left, so it stays in practice mode", cfg["mode"] == "mock" and cfg["why_practice"] == "budget")
+            has["budget_left"] = True
+            cfg = app.set_mode("live")
+            check("mode switch: a used-up budget holds until a restart", cfg["mode"] == "mock" and cfg["why_practice"] == "budget")
+
+            app = server_app.App(force_mock=True)
+            cfg = app.set_mode("live")
+            check("mode switch: a --mock start stays in practice mode", cfg["mode"] == "mock" and cfg["why_practice"] == "forced")
+            os.environ["SORTY_MODE"] = "mock"
+            cfg = server_app.App(force_mock=False).set_mode("live")
+            check("mode switch: so does SORTY_MODE=mock", cfg["mode"] == "mock" and cfg["why_practice"] == "forced")
+            for bad in (None, "", "mock", ["live"]):
+                try:
+                    app.set_mode(bad)
+                    refused = False
+                except ValueError:
+                    refused = True
+                check(f"mode switch: {bad!r} is refused", refused and app.mode == "mock")
+    finally:
+        server_app.has_api_key, server_app.Brain, budget.exhausted = saved[:3]
+        if saved_orchestrator is None:
+            os.environ.pop("SORTY_ORCHESTRATOR", None)
+        else:
+            os.environ["SORTY_ORCHESTRATOR"] = saved_orchestrator
+        if saved[3] is None:
+            os.environ.pop("SORTY_MODE", None)
+        else:
+            os.environ["SORTY_MODE"] = saved[3]
+
+
+def test_instant_alert():
+    """The fast guard that runs beside the careful brain. A stand-in detector answers, so no AI is called."""
+    import time as _time
+    import server.app as server_app
+    from brain import guard as load_guard
+    from brain.config import Settings, load_station
+
+    station = load_station("3bin")
+
+    class Detector:
+        model = "stand-in"
+
+        def __init__(self, answer, delay=0.0, fail=False):
+            self.answer, self.delay, self.fail, self.calls = answer, delay, fail, 0
+
+        def detect(self, frame_bytes):
+            self.calls += 1
+            _time.sleep(self.delay)
+            if self.fail:
+                raise RuntimeError("camera glitch")
+            return self.answer
+
+    g = load_guard.LoadGuard(Settings(), station, detector=Detector({"item": "vape pen", "category": "vape", "sure": "yes"}))
+    look = g.look(frame())
+    check("alert: a sure load-wrecker raises the alert", look["alert"] and look["category"] == "vape", str(look))
+    unsure = load_guard.LoadGuard(Settings(), station, detector=Detector({"item": "pen", "category": "vape", "sure": "no"})).look(frame())
+    check("alert: an unsure look stays silent", unsure["alert"] is False, str(unsure))
+    plain = load_guard.LoadGuard(Settings(), station, detector=Detector({"item": "soda can", "category": "none", "sure": "yes"})).look(frame())
+    check("alert: an ordinary item stays silent", plain["alert"] is False, str(plain))
+    broken = load_guard.LoadGuard(Settings(), station, detector=Detector({}, fail=True)).look(frame())
+    check("alert: a failed look never raises and never alerts", broken["alert"] is False and "error" in broken, str(broken))
+
+    turn = load_guard.alert_turn(station, "vape", "vape pen", "en", 930, "fast check")
+    check("alert turn: an ordinary verdict turn with an alert block", turn["type"] == "verdict" and turn["alert"]["harm"] == "fire"
+          and turn["alert"]["ms"] == 930 and turn["verdict"]["primary_bin"] == "special", str(turn)[:300])
+    check("alert turn: wording for a special item",
+          turn["say"] == "Stop! Not in these bins. Vapes hide a battery that starts fires. Please use the battery drop-off box. Thank you!", turn["say"])
+    check("alert turn: destination shown", turn["verdict"]["steps"][0]["kind"] == "special"
+          and turn["verdict"]["steps"][0]["dest"] == "The battery drop-off box", str(turn["verdict"]["steps"]))
+    bag = load_guard.alert_turn(station, "plastic_bag", "", "en", 1000, "fast check")
+    check("alert turn: wording for a plastic bag",
+          bag["say"] == "Stop! Not in the blue bin. Plastic bags jam the sorting machines. Black bin, on your right. Thank you!", bag["say"])
+    check("alert turn: the bag still gets its bin and arrow", bag["verdict"]["primary_bin"] == "landfill"
+          and bag["verdict"]["steps"][0]["position"] == "right" and bag["alert"]["avoid_bin"] == "recycle")
+    es = load_guard.alert_turn(station, "battery", "pilas", "es", 900, "fast check")
+    check("alert turn: Spanish", es["say"].startswith("¡Alto! No va en estos contenedores.") and es["say"].endswith("¡Gracias!"), es["say"])
+    two = load_guard.alert_turn(load_station("2bin"), "plastic_bag", "bag", "en", 900, "fast check")
+    check("alert turn: works on the two-bin station", two["verdict"]["primary_bin"] == "landfill", str(two["verdict"]))
+    check("alert turn: trace explains what happened", [e["kind"] for e in turn["trace"]] == ["frame", "alert", "verdict"])
+
+    # Practice mode: scenarios marked as load-wreckers return the same alert, scripted.
+    app = server_app.App(force_mock=True)
+    app.brain.delay_s = 0
+    t = app.start_session(frame(), "en", "vape")
+    check("alert: practice mode shows the alert for a marked scenario", t["type"] == "verdict" and t.get("alert", {}).get("category") == "vape", str(t)[:200])
+    t = app.start_session(frame(), "en", "soda_can_empty")
+    check("alert: practice mode leaves ordinary scenarios alone", t["type"] == "ask" and "alert" not in t)
+
+    # Live path with stand-ins: both models start together; a sure alert is not held up by the careful brain.
+    class SlowBrain:
+        mode = "live"
+
+        def __init__(self):
+            self.sessions, self.ended = {}, []
+
+        def start(self, image, lang="en", demo=None):
+            _time.sleep(0.5)
+            return {"session_id": "s_slow", "turn": 1, "type": "verdict", "say": "Blue bin, on your left.",
+                    "trace": [{"t_ms": 0, "kind": "frame", "text": "Item presented to the camera"}]}
+
+        def end(self, session_id):
+            self.ended.append(session_id)
+
+    saved_key = server_app.has_api_key
+    server_app.has_api_key = lambda: True
+    try:
+        app.brain, app.mode = SlowBrain(), "live"
+        app._guard = load_guard.LoadGuard(app.settings, station, detector=Detector({"item": "AA batteries", "category": "battery", "sure": "yes"}))
+        t0 = _time.monotonic()
+        t = app.start_session(frame(), "en", None)
+        fast_s = _time.monotonic() - t0
+        check("alert: live, the alert is the answer", t.get("alert", {}).get("category") == "battery", str(t)[:200])
+        check("alert: live, it does not wait for the careful brain", fast_s < 0.4, f"{fast_s:.2f} s")
+        _time.sleep(0.7)
+        check("alert: live, the unused careful session is dropped", app.brain.ended == ["s_slow"], str(app.brain.ended))
+
+        app._guard = load_guard.LoadGuard(app.settings, station, detector=Detector({"item": "soda can", "category": "none", "sure": "yes"}))
+        t = app.start_session(frame(), "en", None)
+        check("alert: live, a clear fast look hands over to the careful brain", t["say"] == "Blue bin, on your left."
+              and t["guard"]["clear"] is True and [e["kind"] for e in t["trace"]] == ["frame", "guard"], str(t)[:300])
+
+        app._guard = load_guard.LoadGuard(app.settings, station, detector=Detector({"item": "?", "category": "battery", "sure": "yes"}, delay=1.5))
+        app.settings.guard_wait_s = 4.0
+        t = app.start_session(frame(), "en", None)
+        check("alert: live, a slow fast look never delays the careful answer", t["say"] == "Blue bin, on your left." and "alert" not in t, str(t)[:200])
+
+        app.settings.guard = False
+        app._guard = load_guard.LoadGuard(app.settings, station, detector=Detector({"item": "AA", "category": "battery", "sure": "yes"}))
+        t = app.start_session(frame(), "en", None)
+        check("alert: switched off, only the careful brain answers", "alert" not in t and "guard" not in t)
+    finally:
+        server_app.has_api_key = saved_key
+        app.settings.guard = True
+
+
 def main() -> int:
     tests = [test_ask_then_verdict, test_show_frame_specialist, test_on_demand_specialist_and_unchanged_frame,
              test_budget_enforced, test_timeout_and_no_tool_nudge, test_failures_end_safely, test_verdict_forms,
-             test_two_bin_station, test_mock_brain, test_server]
+             test_two_bin_station, test_mock_brain, test_server, test_mode_switch, test_instant_alert]
     failed = 0
     for fn in tests:
         try:

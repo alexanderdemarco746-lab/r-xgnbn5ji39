@@ -228,6 +228,10 @@
       tone({ f: 392, dur: 0.2, peak: 0.13 });
       tone({ f: 329.63, dur: 0.26, peak: 0.13, at: 0.2 });
     },
+    /* firm double beep, twice: "stop" (the instant alert for items that wreck a whole load) */
+    alarm: function () {
+      [0, 0.2, 0.5, 0.7].forEach(function (at) { tone({ f: 880, dur: 0.15, peak: 0.2, type: 'square', at: at }); });
+    },
     /* tiny sparkle for the thank-you */
     thanks: function () {
       tone({ f: 783.99, dur: 0.12, peak: 0.07 });

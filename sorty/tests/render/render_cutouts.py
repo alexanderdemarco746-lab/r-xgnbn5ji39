@@ -21,7 +21,7 @@ import numpy as np
 from mathutils import Vector
 from bpy_extras.object_utils import world_to_camera_view
 import sortylib as L
-import items_a, items_b, items_c, items_d  # noqa: F401  (register the frame builders)
+import items_a, items_b, items_c, items_d, items_e  # noqa: F401  (register the frame builders)
 
 OUT = os.path.normpath(os.path.join(HERE, '..', '..', 'showcase', 'assets', 'items'))
 TMP = os.path.join(HERE, 'preview', 'cut_tmp')
@@ -39,11 +39,12 @@ LABELS = {
     'opaque_bottle': 'Shampoo bottle', 'tied_bag': 'Tied plastic bag', 'cardboard_box_clean': 'Cardboard box',
     'plastic_fork': 'Plastic fork and knife', 'glass_bottle_empty': 'Glass bottle', 'spray_can': 'Spray paint can',
     'two_items_peel_bottle': 'Banana peel and bottle', 'smartphone': 'Smartphone',
-    'pizza_box_open_moldy': 'Moldy pizza box',
+    'pizza_box_open_moldy': 'Moldy pizza box', 'vape': 'Disposable vape', 'plastic_bag': 'Plastic grocery bag',
+    'carton_empty': 'Juice carton',
 }
 ORDER = list(LABELS)
 FLOORS = {'cold_cup_bottom_compostable': 0.62, 'cold_cup_bottom_pet': 0.62}   # keep the base markings legible over dark things
-LOWKEY = {'plastic_fork', 'clamshell_closed', 'clamshell_open_food', 'greasy_napkin', 'tied_bag', 'coffee_cup_lid', 'opaque_bottle'}
+LOWKEY = {'plastic_bag', 'plastic_fork', 'clamshell_closed', 'clamshell_open_food', 'greasy_napkin', 'tied_bag', 'coffee_cup_lid', 'opaque_bottle'}
 CLEAR = {'clear_bottle_empty', 'clear_bottle_half_cola', 'cold_cup_side', 'cold_cup_bottom_compostable', 'cold_cup_bottom_pet',
          'glass_bottle_empty', 'two_items_peel_bottle'}
 

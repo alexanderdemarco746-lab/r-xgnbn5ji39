@@ -13,7 +13,7 @@ sys.path.insert(0, HERE)
 import bpy
 import sortylib as L
 
-for mod in ('items_a', 'items_b', 'items_c', 'items_d'):
+for mod in ('items_a', 'items_b', 'items_c', 'items_d', 'items_e'):
     if os.path.exists(os.path.join(HERE, mod + '.py')):
         importlib.import_module(mod)
 

@@ -466,3 +466,15 @@ body[data-state="verdict"][data-vkind="special"] #binStrip::after {
   .v-arrow svg, .brackets, .mini-eyes i, .face-svg .eye { animation: none !important; }
   body[data-state="looking"] .scan { animation: none; opacity: .55; transform: translateY(180%); }
 }
+
+/* ---------- instant alert: the fast check spotted something that wrecks a whole load ---------- */
+.v-chips:has(.chip.alert) { max-width: 34vw; }
+.chip.alert { background: #fff; color: #7A0F0A; font-weight: 800; }
+.chip.alert small { display: none; }
+.chip.alert > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip.alert .stop, .chip.alert .fast { flex: none; }
+.chip.alert .stop { text-transform: uppercase; letter-spacing: .08em; margin-right: .6em; padding: .1em .6em; border-radius: 999px; background: #B3261E; color: #fff; }
+.chip.alert .fast { font-style: normal; margin-left: .7em; padding: .1em .55em; border-radius: 999px; background: rgba(179, 38, 30, .14); white-space: nowrap; }
+body[data-alert] #verdict { animation: alertFlash .44s ease-in-out 4; }
+@keyframes alertFlash { 0%, 100% { filter: none; } 50% { filter: brightness(1.5) saturate(1.25); } }
+@media (prefers-reduced-motion: reduce) { body[data-alert] #verdict { animation: none; } }

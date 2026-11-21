@@ -1,0 +1,160 @@
+{
+  "meta": {
+    "when": "2026-11-21 16:31",
+    "model": "claude-opus-5-5",
+    "effort": "low",
+    "orchestrator": "langgraph",
+    "station": "3bin",
+    "cost_usd": 0.053,
+    "usage": {
+      "calls": 4,
+      "input": 8434,
+      "output": 816,
+      "cache_read": 14844,
+      "cache_write": 0
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "pizza_box_greasy",
+      "title": "Pizza box, greasy inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "show",
+          "say": "Open the box and show the inside.",
+          "action": "open_show_inside"
+        },
+        {
+          "person": "(shows pizza_box_open_greasy.jpg)"
+        },
+        {
+          "sorty": "verdict",
+          "say": "Green bin, in the middle. Greasy pizza boxes go in compost, crumbs and all. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 1,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "show",
+          "action": "open_show_inside",
+          "say": "Open the box and show the inside.",
+          "item_seen": "Pizza box",
+          "then_check": "contamination"
+        },
+        {
+          "event": "frame",
+          "unchanged": false
+        },
+        {
+          "event": "specialist",
+          "check": "contamination",
+          "result": {
+            "surface_inspected": "Inside base of the open pizza box (the interior is clearly visible in both frames)",
+            "surface_visible": "yes",
+            "food_or_grease_present": "yes",
+            "severity": "heavy",
+            "coverage_percent": 60,
+            "liquid_visible": "no",
+            "evidence": "A large, soft-edged, dark translucent grease stain is soaked into most of the base, with many scattered crumbs, stuck-on browned cheese bits and small dark food pieces, but no pooled liquid or fuzzy mold is evident.",
+            "confidence": "high"
+          }
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Greasy pizza box",
+              "bin": "compost",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Greasy pizza boxes go in compost, crumbs and all.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 10.4,
+      "wall_seconds": 10.4,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "Green bin, in the middle. Greasy pizza boxes go in compost, crumbs and all. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "compost",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Greasy pizza box",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          }
+        ],
+        "reason": "Greasy pizza boxes go in compost, crumbs and all.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "banana_peel",
+      "title": "Banana peel",
+      "group": "See it directly",
+      "transcript": [
+        {
+          "sorty": "verdict",
+          "say": "Green bin, in the middle. Fruit peels and food scraps go in compost. Thank you!"
+        }
+      ],
+      "person_turns": 0,
+      "specialist_calls": 0,
+      "model_calls": 1,
+      "events": [
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Banana peel",
+              "bin": "compost",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Fruit peels and food scraps go in compost.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 2.8,
+      "wall_seconds": 2.8,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": false,
+      "final_say": "Green bin, in the middle. Fruit peels and food scraps go in compost. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "compost",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Banana peel",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          }
+        ],
+        "reason": "Fruit peels and food scraps go in compost.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    }
+  ],
+  "baseline": null
+}

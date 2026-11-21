@@ -6,12 +6,24 @@ What makes it different from a camera that classifies a photo: Sorty knows what 
 
 | Situation | Example | What Sorty does |
 |---|---|---|
+| It would wreck the whole load | Battery, vape, phone, plastic bag, bag of trash | **Instant alert** in about a second: "Stop! Not in these bins." |
 | The answer is visible | Clear bottle, visibly empty | Answers at once: "Blue bin, on your left." |
 | A camera could see it, but not from here | Closed pizza box | "Open the box and show me inside." Then looks again. |
 | Visible but subtle | Is that grease or a shadow? Tiny print on a cup | Runs a specialist vision check on the frame |
 | No camera can ever see it | Is there liquid in the soda can? | Asks the person a yes/no question |
 
 It never keeps people waiting: at most three requests per item, and if the person does not know or walks away, it gives the answer that is safe either way.
+
+### The instant alert
+
+A few items do far more damage than an ordinary sorting mistake. Batteries, vapes and phones can start fires in collection trucks and sorting plants, plastic bags wrap around the sorting machines, and a bag of trash spoils what is around it. For these, a fast warning matters more than a nuanced answer.
+
+So the moment the station activates, **two AI models start on the same camera frame at the same time**:
+
+- a small, fast one that asks a single question: is this one of the few things that wreck a whole load?
+- the careful one, which may look again, ask the person and run specialist checks.
+
+If the fast model is sure, the screen turns red and Sorty says "Stop!" with where the item goes instead, without waiting for the careful answer. If it is not sure it stays silent and the careful model answers as usual, so the alert can only make Sorty faster, never less careful.
 
 ## Try it
 
@@ -34,7 +46,10 @@ No camera handy? Press **M** on the screen for demo mode: pick a test scenario a
 
 ```mermaid
 flowchart TD
-    A[Camera frame] --> B{Which facts decide the bin?<br/>Can I see them?}
+    A[Camera frame] --> G{Fast check, about 1 second:<br/>does it wreck a whole load?}
+    G -->|sure| X["Instant alert: Stop!"]
+    G -.->|silent| B
+    A --> B{Careful check, at the same time:<br/>which facts decide the bin?<br/>Can I see them?}
     B -->|visible now| V[Verdict]
     B -->|visible from another angle| C["Show me again"<br/>open it, flip it, show the bottom]
     B -->|visible but subtle| S[Specialist vision check<br/>grease and food, labels and codes]
@@ -45,7 +60,9 @@ flowchart TD
     V --> O[Voice + screen + lit bin]
 ```
 
-- The brain is Claude with vision (`claude-opus-5-5` by default), called through the official Anthropic SDK. Each step it picks exactly one move.
+- The careful brain is Claude with vision (`claude-opus-5-5` by default), called through the official Anthropic SDK. Each step it picks exactly one move.
+- The instant alert (`sorty/brain/guard.py`) is the fastest Claude model (`claude-haiku-5-5`) with a small picture, no thinking step and a fixed answer shape. It is pluggable: a small detector running on the bin's own computer can take the place of the cloud call. Switch it off with `SORTY_GUARD=0`.
+- The careful loop exists in two forms that produce the same turns: a plain loop (`sorty/brain/agent.py`) and a LangGraph graph (`sorty/brain/graph_brain.py`: think, specialist, person, with a pause while the person answers). Choose with `SORTY_ORCHESTRATOR=classic` or `langgraph`. The LangGraph form can also run on Gemini (`GEMINI_API_KEY` in `sorty/.env` and `SORTY_PROVIDER=google`); that path is written but has not been run against Google's service yet.
 - The rules of the station (which bin is where, what goes in it) live in one JSON file per station, so the same brain runs a 3-bin or a 2-bin layout: `sorty/brain/rules/`.
 - Some limits are enforced in code, not left to the model: at most three requests to the person per item, only bins that exist on the station can be named, a spending cap, and a fallback message ("Please check the labels on the bins") when the AI cannot be reached. One rule lives only in the AI's instructions and has not been tested: what a person says is treated as information about the item, never as an instruction.
 - Specialist checks are pluggable. The two built in are focused inspection passes; a trained detector running on the bin's own computer can replace either one (see `sorty/brain/specialists.py`).
@@ -69,16 +86,32 @@ People decide where to throw something in two or three seconds, usually while wa
 
 ## Tested
 
-Two layers of tests live in `sorty/tests/`:
+Three layers of tests live in `sorty/tests/`:
 
-- `test_offline.py`: 113 checks of the decision loop, turn format, request limit, failure handling and server. No key or network needed. They check the plumbing, not the AI's judgement.
-- `run_scenarios.py`: live runs against a bank of 32 scenarios (`scenarios.json`). Each scenario has camera frames and a hidden truth, for example "the can is half full". A simulated person answers Sorty's questions from that truth, and the final answer is graded. It also compares Sorty with a one-look camera that uses the same model and rules but may not look again or ask.
+- `test_offline.py` and `test_graph.py`: 157 and 56 checks of the decision loop (both forms), the instant alert, turn format, request limit, failure handling and server. No key or network needed. They check the plumbing, not the AI's judgement.
+- `run_scenarios.py`: live runs against a bank of 36 scenarios (`scenarios.json`). Each scenario has camera frames and a hidden truth, for example "the can is half full". A simulated person answers Sorty's questions from that truth, and the final answer is graded. It can also compare Sorty with a one-look camera that uses the same model and rules but may not look again or ask.
+- `run_guard.py`: shows every test picture to the instant alert alone and counts the load-wreckers it caught, the false alarms and the time.
 
-Status: the offline checks pass. With the live AI, only a handful of items have been run through the full loop (half-full soda can, greasy pizza box, clean pizza box, banana peel), on Blender-rendered pictures; the logs are in `sorty/tests/results/`. On the default model every completed run came out right. The cheapest model tried skipped the soda-can question. The full 32-case run with the one-look comparison has not been done, so there is no accuracy figure, and nothing has been tested with a real camera on a real bin.
+Results with the live AI on 2026-11-21 (the reports are in `sorty/tests/results/`):
+
+| What was tested | Result |
+|---|---|
+| One-look camera, 33 scenarios (same model, same rules, same pictures) | 28 of 33 right; 9 of 14 on the items whose answer is hidden |
+| Sorty, the same 33 scenarios (plain loop) | 32 of 33 right; 13 of 14 on the hidden ones; 5.0 s average thinking time |
+| Sorty on the LangGraph brain, 36 scenarios | 35 of 36 right; 4.9 s average thinking time |
+| Instant alert, 5 load-wrecker pictures shown twice | alert raised on 10 of 10 |
+| Instant alert, 26 ordinary pictures shown twice | 0 false alarms in 52 |
+| Time for one fast look | about 1 second (slowest 2.8 s) |
+
+The one miss is the same in both runs: a paper coffee cup, where Sorty sent the cardboard sleeve to recycling and our answer key says the whole cup is landfill.
+
+Limits: the pictures are Blender renders, not photos from a real bin camera; each figure comes from a single run; each load-wrecker has only one picture; the cheapest model tried as the careful brain skipped the soda-can question; the Gemini path has not been run; and nothing has been tested on a real bin.
 
 ```
 cd sorty
 .venv\Scripts\python.exe -m tests.test_offline
+.venv\Scripts\python.exe -m tests.test_graph
+.venv\Scripts\python.exe -m tests.run_guard
 .venv\Scripts\python.exe -m tests.run_scenarios --baseline
 ```
 
@@ -92,7 +125,10 @@ How to use it:
 - **Auto-answer** on: a simulated person answers Sorty's questions. Off: you answer with the buttons that appear under the scene.
 - **Play tour** runs five items in a row, hands-free.
 - **Use my camera** lets you hold a real object up to your webcam (use Chrome or Edge and allow the camera). The live view stays on, in the virtual person's hands and in the camera panel, so you can see what you are showing. A **Press SPACE now** cue tells you when it is your turn; press the **Sensor: object in range** button or the Space key to start. The button stands in for the distance sensor a real bin would have. This needs an API key to be meaningful: in practice mode the answers are scripted and Sorty is not really looking at your object.
+- **Load-wreckers**: show a battery, a vape, a phone or a plastic bag and the instant alert fires in about a second: red screen, "Stop!", and where the item goes instead.
+- **Faster mode** switches the careful brain to a quicker, cheaper model. **Practice mode** switches to scripted answers by hand, for when the connection fails.
 - **AI spend** at the top shows the estimated cost so far against a limit (5 dollars by default, `SORTY_BUDGET_USD`). When the limit is reached Sorty stops calling the AI and goes back to practice mode.
+- The five-slide pitch deck is at http://localhost:8787/showcase/deck/.
 - The right-hand column shows Sorty's real screen, the exact picture sent to the AI, and each step of how Sorty decided.
 - The badge at the top says whether answers come from the live AI or from practice mode (scripted answers, used when no API key is set).
 
@@ -107,11 +143,14 @@ How to use it:
 
 ```
 sorty/
-  brain/        the decision loop, prompts, tools, specialist checks, station rules
+  brain/        the instant alert, the decision loop (plain and LangGraph), prompts, tools, specialist checks, station rules
   server/       local web server: kiosk page + API
   kiosk/        the screen and voice interface (plain HTML, CSS, JavaScript)
-  tests/        scenario bank, test images, offline and live test runners
+  showcase/     the virtual prototype and the pitch deck
+  tests/        scenario bank, test images, offline and live test runners, results
   design/       Blender model and renders of the station
+pitch/          the 3-minute script and submission text
+business/       cost estimate
 ```
 
 ## Credits: tools, frameworks and AI usage
@@ -122,8 +161,8 @@ Built at HackJam '26. This section says plainly what was used, what was generate
 
 | Part | What it uses |
 |---|---|
-| Brain and server | Python 3.13; the official Anthropic Python SDK (`anthropic`) to call the Claude API; Pillow for image handling; Python's standard library web server (no web framework) |
-| AI model inside the product | Claude with vision (`claude-opus-5-5` by default), by Anthropic. It decides which bin an item goes in |
+| Brain and server | Python 3.13; the official Anthropic Python SDK (`anthropic`) to call the Claude API; LangGraph with `langchain-anthropic` and `langchain-google-genai` for the graph form of the decision loop; Pillow for image handling; Python's standard library web server (no web framework) |
+| AI models inside the product | Claude with vision, by Anthropic: `claude-opus-5-5` decides which bin an item goes in (the Faster mode uses `claude-sonnet-5-5`), and `claude-haiku-5-5` is the instant alert. Google's Gemini (`gemini-3.8-flash`) is supported in code through LangGraph but has not been run yet |
 | Screen, voice and virtual prototype | Plain HTML, CSS and JavaScript with no framework and no build step; the browser's Web Speech API (speech synthesis and recognition), Web Audio API and camera API (`getUserMedia`) |
 | 3D design, renders and test pictures | Blender 5.2 (Cycles renderer), driven by Python scripts; FFmpeg to stitch images and encode the turntable video; system fonts |
 | Development | Claude Code (Anthropic's AI coding assistant, running Claude Fable 5.2), Git and GitHub |
@@ -131,8 +170,8 @@ Built at HackJam '26. This section says plainly what was used, what was generate
 ### What was generated by AI
 
 - **All source code in this repository** was written by Claude Code, working from the team's instructions: the brain (`sorty/brain`), the server (`sorty/server`), the kiosk screen and voice (`sorty/kiosk`), the virtual prototype (`sorty/showcase`), and the tests (`sorty/tests`).
-- **The Blender scripts** (`sorty/design`, `sorty/tests/render`) were written by Claude Code, and every image and video in this repository is a Blender render produced by those scripts: the station design, the virtual prototype's layers, and the 27 test pictures. No AI image generator and no stock photos or downloaded 3D models were used.
-- **The written documents** were drafted by Claude Code: this README, the pitch script in `pitch/`, the cost estimate in `business/`, the bin rules in `sorty/brain/rules`, and the 32 test scenarios. The research summarised in the design table above was recalled by the AI from published work and has not been checked against the original papers by the team.
+- **The Blender scripts** (`sorty/design`, `sorty/tests/render`) were written by Claude Code, and every image and video in this repository is a Blender render produced by those scripts: the station design, the virtual prototype's layers, and the 31 test pictures. No AI image generator and no stock photos or downloaded 3D models were used.
+- **The written documents** were drafted by Claude Code: this README, the pitch script in `pitch/`, the cost estimate in `business/`, the bin rules in `sorty/brain/rules`, and the 36 test scenarios. The research summarised in the design table above was recalled by the AI from published work and has not been checked against the original papers by the team.
 - **At run time**, the sorting decisions are made by the Claude model. Without an API key the product runs in a clearly labelled practice mode with scripted answers.
 
 ### What the team did
