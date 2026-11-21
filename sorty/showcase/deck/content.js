@@ -22,7 +22,7 @@ window.DECK = {
     /* true shows the orchestratorLine under the "lanes" slide. */
     orchestratorLine: true
   },
-  orchestratorLine: "LangGraph orchestrator: 35 of 36 test cases right on Claude. Built for Gemini too, not yet verified.",
+  orchestratorLine: "LangGraph orchestrator: 35 of 36 test cases right on Claude. Alert built for Jev, brain built for Gemini: both not yet run.",
 
   /* THE DECK IS FIVE SLIDES: problem, fail, built, lanes, gain. Everything marked "skip: true" further down
      is older material kept for reference; remove "skip: true" to show a slide again. */
@@ -243,8 +243,8 @@ window.DECK = {
          1 the alert agent (fast lane), 2 the orchestrator (a LangGraph graph), and the two it calls:
          3 the inspector agent (closer look for grease, food, mold) and 4 the label agent (codes and marks).
          The orchestrator also turns to the person: one question, or "show me another side". */
-      fast: { title: "1 · Alert agent", model: "Claude Haiku 5.5",
-              text: "One question: does this wreck a load?",
+      fast: { title: "1 · Alert agent", model: "Claude Haiku 5.5 · built for Jev",
+              text: "Does this wreck a load? Also built for Jev (not yet run).",
               end: "Stop!", endNote: "about 1 second" },
       careful: { title: "2 · Orchestrator agent", model: "Claude Opus 5.5 · LangGraph",
                  agents: [
