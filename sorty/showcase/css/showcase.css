@@ -27,6 +27,16 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); over
 .btn:focus-visible, .card:focus-visible, .ans:focus-visible { outline: 3px solid #79B8FF; outline-offset: 2px; }
 .toggle { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); cursor: pointer; padding: 0 4px; }
 .toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+/* voice chooser: a labelled dropdown that sits in the row of buttons */
+.voice { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); cursor: pointer; padding: 0 0 0 4px; }
+.voice select { font: inherit; font-size: 14px; color: var(--text); background: #21262D; border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 8px; max-width: 220px; cursor: pointer; color-scheme: dark; }
+.voice select:hover { background: #2B323B; }
+.voice select:focus-visible { outline: 3px solid #79B8FF; outline-offset: 2px; }
+.voice-hint { max-width: 215px; font-size: 12px; line-height: 1.25; color: #FFD27A; }
+/* with the voice controls the bar can run out of room: the buttons then take a row of their own, and the name is not squeezed */
+#top { flex-wrap: wrap; row-gap: 8px; }
+.controls { margin-left: auto; }
 
 /* ---------- main ---------- */
 #main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 27vw, 470px); gap: 12px; min-height: 0; }

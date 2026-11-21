@@ -1,0 +1,165 @@
+{
+  "meta": {
+    "when": "2026-11-21 15:34",
+    "model": "claude-haiku-5-5",
+    "effort": "low",
+    "station": "3bin",
+    "cost_usd": 0.0027,
+    "usage": {
+      "calls": 4,
+      "input": 3496,
+      "output": 1176,
+      "cache_read": 6000,
+      "cache_write": 13487
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "pizza_box_greasy",
+      "title": "Pizza box, greasy inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "show",
+          "say": "Open the box and show the inside.",
+          "action": "open_show_inside"
+        },
+        {
+          "person": "(shows pizza_box_open_greasy.jpg)"
+        },
+        {
+          "sorty": "verdict",
+          "say": "Green bin, in the middle. Pizza boxes with grease or food on them go to compost, not recycling. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 1,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "show",
+          "action": "open_show_inside",
+          "say": "Open the box and show the inside.",
+          "item_seen": "Pizza box",
+          "then_check": "contamination"
+        },
+        {
+          "event": "frame",
+          "unchanged": false
+        },
+        {
+          "event": "specialist",
+          "check": "contamination",
+          "result": {
+            "surface_inspected": "interior floor of the pizza box, the base inside the open box",
+            "surface_visible": "yes",
+            "food_or_grease_present": "yes",
+            "severity": "heavy",
+            "coverage_percent": 70,
+            "liquid_visible": "cannot_see",
+            "evidence": "A large dark brown greasy stain with soft, irregular edges covers most of the box floor, with crumbs, browned toppings and dark specks sitting on it.",
+            "confidence": "high"
+          }
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Greasy pizza box",
+              "bin": "compost",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Pizza boxes with grease or food on them go to compost, not recycling.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 8.1,
+      "wall_seconds": 8.1,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "Green bin, in the middle. Pizza boxes with grease or food on them go to compost, not recycling. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "compost",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Greasy pizza box",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          }
+        ],
+        "reason": "Pizza boxes with grease or food on them go to compost, not recycling.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "soda_can_liquid",
+      "title": "Soda can, half full",
+      "group": "Must ask",
+      "transcript": [
+        {
+          "sorty": "verdict",
+          "say": "First, pour out any drink. Then: blue bin, on your left. Empty aluminum cans go in recycling, but drinks must be poured out first. Thank you!"
+        }
+      ],
+      "person_turns": 0,
+      "specialist_calls": 0,
+      "model_calls": 1,
+      "events": [
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Cola can",
+              "bin": "recycle",
+              "prep": "Pour out any drink",
+              "dest": ""
+            }
+          ],
+          "reason": "Empty aluminum cans go in recycling, but drinks must be poured out first.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 2.9,
+      "wall_seconds": 2.9,
+      "interactive": true,
+      "problems": [
+        "should have asked the person (no camera can see this)"
+      ],
+      "passed": false,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "First, pour out any drink. Then: blue bin, on your left. Empty aluminum cans go in recycling, but drinks must be poured out first. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "recycle",
+        "steps": [
+          {
+            "kind": "prep",
+            "text": "Pour out any drink"
+          },
+          {
+            "kind": "bin",
+            "item": "Cola can",
+            "bin": "recycle",
+            "position": "left",
+            "text": "Blue bin, on your left"
+          }
+        ],
+        "reason": "Empty aluminum cans go in recycling, but drinks must be poured out first.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    }
+  ],
+  "baseline": null
+}

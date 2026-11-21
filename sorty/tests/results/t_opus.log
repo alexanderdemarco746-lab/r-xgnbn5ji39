@@ -1,0 +1,15 @@
+Running 2 scenarios on claude-opus-5-5 (effort low), station 3bin ...
+  PASS  soda_can_liquid          First, pour the drink down a drain. Then: blue bin, on your left. Empty cans recycle, but 
+        sorty [ask]: Is there still drink in the can?
+        person: Yeah, it's still about half full. I don't want the rest.
+        sorty [verdict]: First, pour the drink down a drain. Then: blue bin, on your left. Empty cans recycle, but drinks never go in bins. Thank you!
+        (2 model calls, 6.1 s thinking)
+  PASS  pizza_box_greasy         Green bin, in the middle. Greasy pizza boxes and crumbs go in compost. Thank you!
+        sorty [show open_show_inside]: Open the box and show the inside.
+        person: (shows pizza_box_open_greasy.jpg)
+        sorty [verdict]: Green bin, in the middle. Greasy pizza boxes and crumbs go in compost. Thank you!
+        specialist contamination: {"surface_inspected": "Interior base of the open pizza box (with inner lid and walls also in view)", "surface_visible": "yes", "food_or_grease_present": "yes", "severity": "heavy", "coverage_percent": 65, "liquid_visible
+        (2 model calls, 9.0 s thinking)
+
+Sorty: 2 of 2 scenarios passed.
+Estimated API cost: $0.06   tokens: {'calls': 6, 'input': 3690, 'output': 1107, 'cache_read': 21738, 'cache_write': 4190}

@@ -762,6 +762,85 @@
     }).catch(function () {});
   }, 4000);
 
+  /* ---------------------------------------------------------------- voice chooser */
+  /* Sorty speaks with a voice that belongs to this browser, and the kiosk in the frame does the speaking. This block
+     asks the kiosk which voices there are, stores the choice through it, and plays a test line. It stands alone: it
+     uses nothing else on this page and stays quiet while the frame is not ready. */
+  (function () {
+    var sel = document.getElementById('voiceSel'), btn = document.getElementById('btnVoiceTest');
+    var hint = document.getElementById('voiceHint'), frame = document.getElementById('kiosk');
+    if (!sel || !btn || !frame) return;
+    var LANG = 'en', LINE = 'Blue bin, on your left. Thank you!';
+    var shown = null, heard = null, timer = null, settled = false, robotic = false, quiet = false;
+
+    function voiceApi() {                      // the kiosk's voice module, or null while the frame is still loading
+      try { var v = frame.contentWindow.Sorty.voice; return v && v.voices && v.setPreferred ? v : null; } catch (e) { return null; }
+    }
+    /* "Microsoft Aria Online (Natural) - English (United States)" reads better as "Aria Online (Natural)". */
+    function label(x) {
+      var n = String(x.name).replace(/^Microsoft\s+/i, '').replace(/\s+-\s+.*$/, '') || String(x.name);
+      var l = String(x.lang || '').replace('_', '-');
+      return (x.recommended ? '★ ' : '') + n + (!l || /^en-US$/i.test(l) ? '' : ' · ' + l);
+    }
+    function showHint() {
+      if (!hint) return;
+      var text = quiet ? 'Sound is off, so nothing played. Turn the sound on and test again.'
+        : !robotic ? ''
+          : /\bEdg\//.test(navigator.userAgent) ? 'The natural voices need an internet connection.'
+            : 'For the most natural voice, open this page in Microsoft Edge.';
+      hint.textContent = text; hint.hidden = !text;
+    }
+    function fill() {
+      var v = voiceApi(), list, want;
+      if (!v) return;
+      try { list = v.voices(LANG) || []; want = v.preferred(LANG) || ''; } catch (e) { return; }
+      var key = list.map(function (x) { return x.name + (x.recommended ? '*' : ''); }).join('|');
+      if (key !== shown) {
+        shown = key;
+        sel.textContent = '';
+        [{ name: '' }].concat(list).forEach(function (x) {
+          var o = document.createElement('option');
+          o.value = x.name; o.textContent = x.name ? label(x) : 'Automatic (best available)';
+          o.selected = !!x.name && x.name === want;
+          sel.appendChild(o);
+        });
+      }
+      robotic = settled && !list.some(function (x) { return x.natural; });
+      showHint();
+    }
+    function hook() {                          // the browser says when its list of voices changes
+      try {
+        var s = frame.contentWindow.speechSynthesis;
+        if (s && s !== heard && s.addEventListener) { s.addEventListener('voiceschanged', fill); heard = s; }
+      } catch (e) { /* frame not ready */ }
+    }
+    function watch() {                         // voices arrive late, the natural ones last: look again for the first seconds
+      var n = 0;
+      clearInterval(timer); shown = null; settled = false;
+      timer = setInterval(function () {
+        if (++n >= 6) settled = true;          // three seconds in, it is fair to say what this browser lacks
+        if (n >= 24) clearInterval(timer);
+        hook(); fill();
+      }, 500);
+      hook(); fill();
+    }
+    function test() {
+      var v = voiceApi();
+      if (!v) return;
+      try { quiet = !!(v.isMuted && v.isMuted()); showHint(); v.speak(LINE, 'en'); } catch (e) { /* frame not ready */ }
+    }
+
+    sel.addEventListener('change', function () {
+      var v = voiceApi();
+      if (!v) return;
+      try { v.setPreferred(sel.value, LANG); } catch (e) { return; }
+      test();
+    });
+    btn.addEventListener('click', function (e) { if (e.detail) btn.blur(); test(); });   // after a mouse click, Space stays free for the sensor
+    frame.addEventListener('load', watch);
+    watch();
+  })();
+
   window.SortyShowcase = { state: function () { return { ready: S.kioskReady, run: S.run && { id: S.run.id, kind: S.run.kind, turns: S.run.turns, over: S.run.over }, base: S.base, poses: S.hasPoses, lit: S.litOk, items: Object.keys(S.items).length, scenarios: S.scenarios.length }; }, start: startRun, cancel: cancelRun };
 
   init();

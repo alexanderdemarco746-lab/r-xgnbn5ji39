@@ -1,0 +1,266 @@
+{
+  "meta": {
+    "when": "2026-11-21 15:38",
+    "model": "claude-sonnet-5-5",
+    "effort": "low",
+    "station": "3bin",
+    "cost_usd": 0.0431,
+    "usage": {
+      "calls": 9,
+      "input": 7175,
+      "output": 1729,
+      "cache_read": 36000,
+      "cache_write": 3137
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "pizza_box_greasy",
+      "title": "Pizza box, greasy inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "show",
+          "say": "Open the box and show the inside.",
+          "action": "open_show_inside"
+        },
+        {
+          "person": "(shows pizza_box_open_greasy.jpg)"
+        },
+        {
+          "sorty": "verdict",
+          "say": "Green bin, in the middle. Greasy or cheesy cardboard goes in compost, box and all. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 1,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "show",
+          "action": "open_show_inside",
+          "say": "Open the box and show the inside.",
+          "item_seen": "Pizza box",
+          "then_check": "contamination"
+        },
+        {
+          "event": "frame",
+          "unchanged": false
+        },
+        {
+          "event": "specialist",
+          "check": "contamination",
+          "result": {
+            "surface_inspected": "Interior floor of the pizza box",
+            "surface_visible": "yes",
+            "food_or_grease_present": "yes",
+            "severity": "heavy",
+            "coverage_percent": 60,
+            "liquid_visible": "cannot_see",
+            "evidence": "A large dark brown greasy stain with soft edges covers most of the box floor, with crumbs, browned cheese bits and dark specks sitting on it, which would contaminate the cardboard.",
+            "confidence": "high"
+          }
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Greasy pizza box",
+              "bin": "compost",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Greasy or cheesy cardboard goes in compost, box and all.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 9.0,
+      "wall_seconds": 9.0,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "Green bin, in the middle. Greasy or cheesy cardboard goes in compost, box and all. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "compost",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Greasy pizza box",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          }
+        ],
+        "reason": "Greasy or cheesy cardboard goes in compost, box and all.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "pizza_box_clean",
+      "title": "Pizza box, clean inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "show",
+          "say": "Open the box and show the inside.",
+          "action": "open_show_inside"
+        },
+        {
+          "person": "(shows pizza_box_open_clean.jpg)"
+        },
+        {
+          "sorty": "verdict",
+          "say": "Blue bin, on your left. Clean, dry cardboard pizza boxes can be recycled. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 1,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "show",
+          "action": "open_show_inside",
+          "say": "Open the box and show the inside.",
+          "item_seen": "Pizza box",
+          "then_check": "contamination"
+        },
+        {
+          "event": "frame",
+          "unchanged": false
+        },
+        {
+          "event": "specialist",
+          "check": "contamination",
+          "result": {
+            "surface_inspected": "Interior floor and inner walls of the open box, checked in the full frame and the zoomed centre crop",
+            "surface_visible": "yes",
+            "food_or_grease_present": "no",
+            "severity": "none",
+            "coverage_percent": 0,
+            "liquid_visible": "no",
+            "evidence": "The inside floor is a uniform peach surface with no darker translucent patches, crumbs, smears or pooled liquid, and the inner walls look equally clean.",
+            "confidence": "high"
+          }
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Clean pizza box",
+              "bin": "recycle",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Clean, dry cardboard pizza boxes can be recycled.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 7.3,
+      "wall_seconds": 7.3,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "Blue bin, on your left. Clean, dry cardboard pizza boxes can be recycled. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "recycle",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Clean pizza box",
+            "bin": "recycle",
+            "position": "left",
+            "text": "Blue bin, on your left"
+          }
+        ],
+        "reason": "Clean, dry cardboard pizza boxes can be recycled.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "soda_can_liquid",
+      "title": "Soda can, half full",
+      "group": "Must ask",
+      "transcript": [
+        {
+          "sorty": "ask",
+          "say": "Is the can empty?"
+        },
+        {
+          "person": "No, it's about half full. I don't want the rest, though."
+        },
+        {
+          "sorty": "verdict",
+          "say": "First, pour out the rest of the cola. Then: blue bin, on your left. Liquids never go in bins; empty aluminum cans are recycled. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 0,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "ask",
+          "question": "Is the can empty?",
+          "fact": "liquid inside",
+          "item_seen": "Cola can"
+        },
+        {
+          "event": "answer",
+          "text": "No, it's about half full. I don't want the rest, though."
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Cola can",
+              "bin": "recycle",
+              "prep": "Pour out the rest of the cola",
+              "dest": ""
+            }
+          ],
+          "reason": "Liquids never go in bins; empty aluminum cans are recycled.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 5.0,
+      "wall_seconds": 6.4,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "First, pour out the rest of the cola. Then: blue bin, on your left. Liquids never go in bins; empty aluminum cans are recycled. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "recycle",
+        "steps": [
+          {
+            "kind": "prep",
+            "text": "Pour out the rest of the cola"
+          },
+          {
+            "kind": "bin",
+            "item": "Cola can",
+            "bin": "recycle",
+            "position": "left",
+            "text": "Blue bin, on your left"
+          }
+        ],
+        "reason": "Liquids never go in bins; empty aluminum cans are recycled.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    }
+  ],
+  "baseline": null
+}

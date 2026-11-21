@@ -1,0 +1,21 @@
+Running 3 scenarios on claude-sonnet-5-5 (effort low), station 3bin ...
+  PASS  soda_can_liquid          First, pour out the rest of the cola. Then: blue bin, on your left. Liquids never go in bi
+        sorty [ask]: Is the can empty?
+        person: No, it's about half full. I don't want the rest, though.
+        sorty [verdict]: First, pour out the rest of the cola. Then: blue bin, on your left. Liquids never go in bins; empty aluminum cans are recycled. Thank you!
+        (2 model calls, 5.0 s thinking)
+  PASS  pizza_box_clean          Blue bin, on your left. Clean, dry cardboard pizza boxes can be recycled. Thank you!
+        sorty [show open_show_inside]: Open the box and show the inside.
+        person: (shows pizza_box_open_clean.jpg)
+        sorty [verdict]: Blue bin, on your left. Clean, dry cardboard pizza boxes can be recycled. Thank you!
+        specialist contamination: {"surface_inspected": "Interior floor and inner walls of the open box, checked in the full frame and the zoomed centre crop", "surface_visible": "yes", "food_or_grease_present": "no", "severity": "none", "coverage_percen
+        (2 model calls, 7.3 s thinking)
+  PASS  pizza_box_greasy         Green bin, in the middle. Greasy or cheesy cardboard goes in compost, box and all. Thank y
+        sorty [show open_show_inside]: Open the box and show the inside.
+        person: (shows pizza_box_open_greasy.jpg)
+        sorty [verdict]: Green bin, in the middle. Greasy or cheesy cardboard goes in compost, box and all. Thank you!
+        specialist contamination: {"surface_inspected": "Interior floor of the pizza box", "surface_visible": "yes", "food_or_grease_present": "yes", "severity": "heavy", "coverage_percent": 60, "liquid_visible": "cannot_see", "evidence": "A large dark b
+        (2 model calls, 9.0 s thinking)
+
+Sorty: 3 of 3 scenarios passed.
+Estimated API cost: $0.04   tokens: {'calls': 9, 'input': 7175, 'output': 1729, 'cache_read': 36000, 'cache_write': 3137}

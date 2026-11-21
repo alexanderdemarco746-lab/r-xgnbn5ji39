@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "when": "2026-11-21 15:37",
+    "model": "claude-opus-5-5",
+    "effort": "low",
+    "station": "3bin",
+    "cost_usd": 0.0349,
+    "usage": {
+      "calls": 3,
+      "input": 3487,
+      "output": 549,
+      "cache_read": 12000,
+      "cache_write": 1514
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "pizza_box_clean",
+      "title": "Pizza box, clean inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "show",
+          "say": "Open the box and show the inside.",
+          "action": "open_show_inside"
+        },
+        {
+          "person": "(shows pizza_box_open_clean.jpg)"
+        },
+        {
+          "sorty": "verdict",
+          "say": "Blue bin, on your left. Clean pizza boxes recycle; greasy ones go to compost. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 1,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "show",
+          "action": "open_show_inside",
+          "say": "Open the box and show the inside.",
+          "item_seen": "Pizza box",
+          "then_check": "contamination"
+        },
+        {
+          "event": "frame",
+          "unchanged": false
+        },
+        {
+          "event": "specialist",
+          "check": "contamination",
+          "result": {
+            "surface_inspected": "Interior base and inner walls of the open pizza box, plus the underside of the raised lid",
+            "surface_visible": "yes",
+            "food_or_grease_present": "no",
+            "severity": "none",
+            "coverage_percent": 0,
+            "liquid_visible": "no",
+            "evidence": "The box is open and its interior is fully visible in both frames: the base and inner walls are a uniform, even tone with no darker translucent patches, crumbs, smears or pooled liquid, and the only markings are the crisp printed 'FRESH • HOT • DELICIOUS' text on the outer front wall.",
+            "confidence": "high"
+          }
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Clean pizza box",
+              "bin": "recycle",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Clean pizza boxes recycle; greasy ones go to compost.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 7.8,
+      "wall_seconds": 7.8,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "Blue bin, on your left. Clean pizza boxes recycle; greasy ones go to compost. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "recycle",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Clean pizza box",
+            "bin": "recycle",
+            "position": "left",
+            "text": "Blue bin, on your left"
+          }
+        ],
+        "reason": "Clean pizza boxes recycle; greasy ones go to compost.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    }
+  ],
+  "baseline": null
+}

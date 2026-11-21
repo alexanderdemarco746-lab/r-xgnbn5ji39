@@ -77,7 +77,8 @@ class MockBrain(Brain):
                 elif expect.get("needs") == "ask":
                     mock["ask"] = {"question": "Is it empty?", "because": "I can't see inside.", "answer": "Yes."}
                 first_bin = (expect.get("bins") or ["landfill"])[0]
-                mock["verdict"] = {"items": [{"item": title, "bin": first_bin, "prep": ""}], "reason": scenario.get("why", "")[:60]}
+                # No spoken reason here: the scenario's "why" explains the test case to developers, it is not a line for Sorty.
+                mock["verdict"] = {"items": [{"item": title, "bin": first_bin, "prep": ""}], "reason": ""}
         steps = []
         if "show" in mock:
             steps.append(("show", {"item_seen": title, "then_check": "none", **mock["show"]}))

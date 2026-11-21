@@ -202,7 +202,7 @@ class Brain:
             sess.note("frame", "New view received" + (" (looks unchanged)" if unchanged else ""))
             sess.log.append({"event": "frame", "unchanged": unchanged})
             blocks = [{"type": "text", "text": lead}, to_block(view)]
-            check = pending["input"].get("then_check", "none") if asked_view else "none"
+            check = pending["input"].get("then_check", "none") if asked_view and self.s.prearm_specialist else "none"
             if check in SPECIALIST_CHECKS and not unchanged and sess.specialist_calls < self.s.max_specialist_calls:
                 focus = pending["input"].get("because", "") or pending["input"].get("say", "")
                 results = self._run_specialists(sess, [check], focus)

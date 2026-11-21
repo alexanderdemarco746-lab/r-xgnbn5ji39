@@ -25,30 +25,104 @@
     else synth.onvoiceschanged = refreshVoices;
   }
 
-  /* Choose the most natural voice the device offers for a language. */
-  function pickVoice(lang) {
-    if (!voices.length) refreshVoices();
-    var want = i18n.speechLang(lang).toLowerCase();
-    var base = want.slice(0, 2);
-    var best = null, bestScore = -1e9;
+  /* A voice picked by hand (the showcase page has a chooser) is remembered per language. */
+  var STORE = 'sorty.voice.';
+  var chosen = {};             // only used when the browser refuses storage (private mode)
+  function langKey(lang) { return String(lang || i18n.lang || 'en').toLowerCase().slice(0, 2); }
+  function preferred(lang) {
+    var k = langKey(lang);
+    if (chosen[k] != null) return chosen[k];
+    try { return window.localStorage.getItem(STORE + k) || ''; } catch (e) { return ''; }
+  }
+  function setPreferred(name, lang) {
+    var k = langKey(lang);
+    name = String(name || '');
+    try {
+      if (name) window.localStorage.setItem(STORE + k, name);
+      else window.localStorage.removeItem(STORE + k);
+      delete chosen[k];
+    } catch (e) { chosen[k] = name; }
+  }
+
+  /* What makes a good voice for Sorty: natural-sounding first, then a warm assistant-style name (in this order),
+     then the accent. Voices with a man's name come after those. Names are compared in lower case, without accents. */
+  var NATURAL = /natural|online|neural/;
+  var TASTE = {
+    en: {
+      accents: ['en-us'],
+      liked: ['aria', 'jenny', 'ava', 'emma', 'michelle', 'samantha', 'google us english', 'zira'],
+      male: ['david', 'mark', 'guy', 'ryan', 'brian', 'andrew', 'eric', 'christopher', 'roger', 'steffan', 'george', 'james',
+        'thomas', 'william', 'liam', 'connor', 'mitchell', 'luke', 'daniel', 'alex', 'fred', 'male']
+    },
+    es: {
+      accents: ['es-us', 'es-mx'],
+      liked: ['paloma', 'dalia', 'elvira', 'paulina', 'monica', 'google espanol de estados unidos', 'google espanol',
+        'sabina', 'helena', 'laura'],
+      male: ['alonso', 'jorge', 'alvaro', 'raul', 'pablo', 'juan', 'diego', 'carlos', 'male']
+    }
+  };
+  function wordTest(word) { return new RegExp('\\b' + word + '(multilingual)?\\b'); }
+  Object.keys(TASTE).forEach(function (k) {
+    TASTE[k].liked = TASTE[k].liked.map(wordTest);
+    TASTE[k].male = wordTest('(' + TASTE[k].male.join('|') + ')');
+  });
+  var ACCENTS = new RegExp('[' + String.fromCharCode(0x300) + '-' + String.fromCharCode(0x36f) + ']', 'g');   // combining marks
+  function plain(s) {
+    s = String(s || '').toLowerCase();
+    try { s = s.normalize('NFD').replace(ACCENTS, ''); } catch (e) { /* very old browser */ }
+    return s;
+  }
+
+  /* Every voice the device offers for a language, best first. */
+  function ranked(lang) {
+    var want = i18n.speechLang(lang).toLowerCase(), base = want.slice(0, 2);
+    var taste = TASTE[base] || { accents: [], liked: [], male: null };
+    var offline = navigator.onLine === false, out = [];
     for (var i = 0; i < voices.length; i++) {
       var v = voices[i];
       var vl = String(v.lang || '').toLowerCase().replace('_', '-');
       if (vl.slice(0, 2) !== base) continue;
-      var n = String(v.name || '');
-      var s = 0;
-      if (vl === want) s += 12;
-      if (/natural/i.test(n)) s += 50;
-      if (/neural/i.test(n)) s += 30;
-      if (/google/i.test(n)) s += 25;
-      if (/online/i.test(n)) s += 20;
-      if (/(aria|jenny|ava|emma|samantha|michelle|sonia|libby|dalia|paulina|elvira|sabina|m[oó]nica|paloma)/i.test(n)) s += 15;
-      if (/(david|zira|mark|desktop)/i.test(n)) s -= 5;         // older, more robotic voices
-      if (navigator.onLine === false && v.localService === false) s -= 200;
+      var n = plain(v.name), natural = NATURAL.test(n), usable = !(offline && v.localService === false);
+      var liked = -1, s = 0;
+      for (var j = 0; j < taste.liked.length && liked < 0; j++) if (taste.liked[j].test(n)) liked = j;
+      if (natural) s += 1000;                                    // the neural voices: far ahead of everything else
+      else if (/premium|enhanced/.test(n)) s += 300;             // the better voices on Apple devices
+      if (liked >= 0) s += (taste.liked.length - liked) * 20;
+      else if (taste.male && taste.male.test(n)) s -= 100;
+      if (vl === want) s += 50;
+      else if (taste.accents.indexOf(vl) >= 0) s += 35;
+      if (!usable) s -= 5000;                                    // an online voice cannot speak without a connection
       if (v.default) s += 1;
-      if (s > bestScore) { bestScore = s; best = v; }
+      out.push({ voice: v, score: s, at: i, usable: usable, natural: natural, recommended: natural && liked >= 0 });
     }
-    return best;
+    out.sort(function (a, b) { return (b.score - a.score) || (a.at - b.at); });
+    return out;
+  }
+
+  /* The voice to speak a language with: the one picked by hand while this device still offers it,
+     otherwise the best one on offer. */
+  function pickVoice(lang) {
+    if (!voices.length) refreshVoices();
+    var list = ranked(lang), name = preferred(lang);
+    if (name) {
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].voice.name === name && list[i].usable) return list[i].voice;
+      }
+    }
+    return list.length ? list[0].voice : null;
+  }
+
+  /* The same list for a chooser, read fresh because browsers load their voices late. */
+  function listVoices(lang) {
+    refreshVoices();
+    var seen = {}, out = [];
+    ranked(lang).forEach(function (r) {
+      var id = 'v:' + r.voice.name;
+      if (seen[id]) return;
+      seen[id] = true;
+      out.push({ name: r.voice.name, lang: r.voice.lang, natural: r.natural, recommended: r.recommended });
+    });
+    return out;
   }
 
   /* Speak text. Resolves when the words are finished (or would have been, when muted),
@@ -253,6 +327,9 @@
     canSpeak: function () { return !!synth; },
     setMuted: function (m) { muted = !!m; if (muted) { try { if (synth) synth.cancel(); } catch (e) { /* ignore */ } } },
     isMuted: function () { return muted; },
-    voiceName: function (lang) { var v = pickVoice(lang); return v ? v.name : ''; }
+    voiceName: function (lang) { var v = pickVoice(lang); return v ? v.name : ''; },
+    voices: listVoices,
+    preferred: preferred,
+    setPreferred: setPreferred
   };
 })();

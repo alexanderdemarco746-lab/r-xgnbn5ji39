@@ -1,0 +1,15 @@
+Running 2 scenarios on claude-sonnet-5-5 (effort low), station 3bin ...
+  PASS  soda_can_liquid          First, pour out the rest of the drink. Then: blue bin, on your left. Liquids never go in b
+        sorty [ask]: Is the can empty?
+        person: No, it's still about half full. I don't want the rest, though.
+        sorty [verdict]: First, pour out the rest of the drink. Then: blue bin, on your left. Liquids never go in bins; empty cans are recycled. Thank you!
+        (2 model calls, 5.0 s thinking)
+  PASS  pizza_box_greasy         Green bin, in the middle. Greasy, cheesy cardboard goes to compost, whole box. Thank you!
+        sorty [show open_show_inside]: Open the box and show the inside.
+        person: (shows pizza_box_open_greasy.jpg)
+        sorty [verdict]: Green bin, in the middle. Greasy, cheesy cardboard goes to compost, whole box. Thank you!
+        specialist contamination: {"surface_inspected": "Inside bottom surface of the open pizza box", "surface_visible": "yes", "food_or_grease_present": "yes", "severity": "heavy", "coverage_percent": 60, "liquid_visible": "no", "evidence": "The inner 
+        (2 model calls, 8.2 s thinking)
+
+Sorty: 2 of 2 scenarios passed.
+Estimated API cost: $0.05   tokens: {'calls': 6, 'input': 3689, 'output': 918, 'cache_read': 12000, 'cache_write': 13734}

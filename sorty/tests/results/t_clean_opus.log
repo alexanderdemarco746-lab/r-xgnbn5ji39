@@ -1,0 +1,10 @@
+Running 1 scenarios on claude-opus-5-5 (effort low), station 3bin ...
+  PASS  pizza_box_clean          Blue bin, on your left. Clean pizza boxes recycle; greasy ones go to compost. Thank you!
+        sorty [show open_show_inside]: Open the box and show the inside.
+        person: (shows pizza_box_open_clean.jpg)
+        sorty [verdict]: Blue bin, on your left. Clean pizza boxes recycle; greasy ones go to compost. Thank you!
+        specialist contamination: {"surface_inspected": "Interior base and inner walls of the open pizza box, plus the underside of the raised lid", "surface_visible": "yes", "food_or_grease_present": "no", "severity": "none", "coverage_percent": 0, "liq
+        (2 model calls, 7.8 s thinking)
+
+Sorty: 1 of 1 scenarios passed.
+Estimated API cost: $0.03   tokens: {'calls': 3, 'input': 3487, 'output': 549, 'cache_read': 12000, 'cache_write': 1514}

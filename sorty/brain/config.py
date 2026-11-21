@@ -40,6 +40,7 @@ class Settings:
     specialist_effort: str = "low"      # measured live: medium added seconds to every second look
     speed: str = ""                     # "fast" enables fast mode (costs more)
     use_fallbacks: bool = True          # server-side refusal fallback
+    prearm_specialist: bool = True      # run the requested check on a new view before the brain sees it
     station_id: str = "3bin"
     port: int = 8787
     request_timeout_s: float = 45.0
@@ -71,6 +72,7 @@ def get_settings() -> Settings:
     s.specialist_model = env("SORTY_SPECIALIST_MODEL", s.specialist_model)
     s.specialist_effort = env("SORTY_SPECIALIST_EFFORT", s.specialist_effort)
     s.speed = env("SORTY_SPEED", s.speed)
+    s.prearm_specialist = env("SORTY_PREARM", "1") not in ("0", "false", "no")
     s.use_fallbacks = env("SORTY_FALLBACKS", "1") not in ("0", "false", "no")
     s.station_id = env("SORTY_STATION", s.station_id)
     s.port = int(env("SORTY_PORT") or env("PORT") or s.port)    # PORT: set by hosting and preview tools

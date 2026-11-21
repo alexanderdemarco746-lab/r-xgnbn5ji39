@@ -254,6 +254,8 @@ def main() -> int:
     ap.add_argument("--effort", default="")
     ap.add_argument("--tag", default="latest", help="name for the result files")
     ap.add_argument("--verbose", action="store_true", help="print each conversation")
+    ap.add_argument("--speed", default="", help="'fast' turns on fast mode")
+    ap.add_argument("--no-prearm", action="store_true", help="no automatic check on a new view")
     args = ap.parse_args()
 
     if not has_api_key():
@@ -267,6 +269,10 @@ def main() -> int:
         settings.model = args.model
     if args.effort:
         settings.effort = args.effort
+    if args.speed:
+        settings.speed = args.speed
+    if args.no_prearm:
+        settings.prearm_specialist = False
     settings.api_retries = 6
     settings.request_timeout_s = 90.0
     station = load_station(settings.station_id)

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "when": "2026-11-21 15:33",
+    "model": "claude-opus-5-5",
+    "effort": "low",
+    "station": "3bin",
+    "cost_usd": 0.0094,
+    "usage": {
+      "calls": 1,
+      "input": 4,
+      "output": 138,
+      "cache_read": 4869,
+      "cache_write": 1131
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "banana_peel",
+      "title": "Banana peel",
+      "group": "See it directly",
+      "transcript": [
+        {
+          "sorty": "verdict",
+          "say": "Green bin, in the middle. Fruit peels and food scraps go in compost. Thank you!"
+        }
+      ],
+      "person_turns": 0,
+      "specialist_calls": 0,
+      "model_calls": 1,
+      "events": [
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Banana peel",
+              "bin": "compost",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Fruit peels and food scraps go in compost.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 2.6,
+      "wall_seconds": 2.6,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": false,
+      "final_say": "Green bin, in the middle. Fruit peels and food scraps go in compost. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "compost",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Banana peel",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          }
+        ],
+        "reason": "Fruit peels and food scraps go in compost.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    }
+  ],
+  "baseline": null
+}

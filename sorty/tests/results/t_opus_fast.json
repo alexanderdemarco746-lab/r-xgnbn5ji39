@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "when": "2026-11-21 15:36",
+    "model": "claude-opus-5-5",
+    "effort": "low",
+    "station": "3bin",
+    "cost_usd": 0.0,
+    "usage": {
+      "calls": 0,
+      "input": 0,
+      "output": 0,
+      "cache_read": 0,
+      "cache_write": 0
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "pizza_box_greasy",
+      "title": "Pizza box, greasy inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "error",
+          "say": "I can't tell right now. Please check the labels on the bins."
+        }
+      ],
+      "person_turns": 0,
+      "specialist_calls": 0,
+      "model_calls": 0,
+      "events": [
+        {
+          "event": "error",
+          "why": "rate limited by the API"
+        }
+      ],
+      "think_seconds": 23.4,
+      "wall_seconds": 23.4,
+      "interactive": true,
+      "problems": [
+        "ended with 'error' (rate limited by the API), expected 'verdict'"
+      ],
+      "passed": false,
+      "outcome_ok": false,
+      "hidden_fact": true,
+      "final_say": "I can't tell right now. Please check the labels on the bins.",
+      "final_type": "error",
+      "verdict": null
+    },
+    {
+      "id": "soda_can_liquid",
+      "title": "Soda can, half full",
+      "group": "Must ask",
+      "transcript": [
+        {
+          "sorty": "error",
+          "say": "I can't tell right now. Please check the labels on the bins."
+        }
+      ],
+      "person_turns": 0,
+      "specialist_calls": 0,
+      "model_calls": 0,
+      "events": [
+        {
+          "event": "error",
+          "why": "rate limited by the API"
+        }
+      ],
+      "think_seconds": 23.3,
+      "wall_seconds": 23.3,
+      "interactive": true,
+      "problems": [
+        "ended with 'error' (rate limited by the API), expected 'verdict'"
+      ],
+      "passed": false,
+      "outcome_ok": false,
+      "hidden_fact": true,
+      "final_say": "I can't tell right now. Please check the labels on the bins.",
+      "final_type": "error",
+      "verdict": null
+    }
+  ],
+  "baseline": null
+}

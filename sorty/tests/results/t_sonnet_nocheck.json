@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "when": "2026-11-21 15:34",
+    "model": "claude-sonnet-5-5",
+    "effort": "low",
+    "station": "3bin",
+    "cost_usd": 0.0142,
+    "usage": {
+      "calls": 5,
+      "input": 206,
+      "output": 752,
+      "cache_read": 24000,
+      "cache_write": 1542
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "pizza_box_greasy",
+      "title": "Pizza box, greasy inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "show",
+          "say": "Open the box and show me the inside.",
+          "action": "open_show_inside"
+        },
+        {
+          "person": "(shows pizza_box_open_greasy.jpg)"
+        },
+        {
+          "sorty": "verdict",
+          "say": "Green bin, in the middle. Greasy pizza boxes with food stuck on go to compost. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 0,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "show",
+          "action": "open_show_inside",
+          "say": "Open the box and show me the inside.",
+          "item_seen": "Pizza box",
+          "then_check": "contamination"
+        },
+        {
+          "event": "frame",
+          "unchanged": false
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Greasy pizza box",
+              "bin": "compost",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Greasy pizza boxes with food stuck on go to compost.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 4.7,
+      "wall_seconds": 4.7,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "Green bin, in the middle. Greasy pizza boxes with food stuck on go to compost. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "compost",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Greasy pizza box",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          }
+        ],
+        "reason": "Greasy pizza boxes with food stuck on go to compost.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "soda_can_liquid",
+      "title": "Soda can, half full",
+      "group": "Must ask",
+      "transcript": [
+        {
+          "sorty": "ask",
+          "say": "Is the can empty?"
+        },
+        {
+          "person": "Nope, it's still about half full. I don't want the rest, though."
+        },
+        {
+          "sorty": "verdict",
+          "say": "First, pour out the cola. Then: blue bin, on your left. Liquids never go in bins; empty aluminum cans are recycled. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 0,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "ask",
+          "question": "Is the can empty?",
+          "fact": "liquid inside",
+          "item_seen": "Cola can"
+        },
+        {
+          "event": "answer",
+          "text": "Nope, it's still about half full. I don't want the rest, though."
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Cola can",
+              "bin": "recycle",
+              "prep": "Pour out the cola",
+              "dest": ""
+            }
+          ],
+          "reason": "Liquids never go in bins; empty aluminum cans are recycled.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 4.8,
+      "wall_seconds": 6.2,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "First, pour out the cola. Then: blue bin, on your left. Liquids never go in bins; empty aluminum cans are recycled. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "recycle",
+        "steps": [
+          {
+            "kind": "prep",
+            "text": "Pour out the cola"
+          },
+          {
+            "kind": "bin",
+            "item": "Cola can",
+            "bin": "recycle",
+            "position": "left",
+            "text": "Blue bin, on your left"
+          }
+        ],
+        "reason": "Liquids never go in bins; empty aluminum cans are recycled.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    }
+  ],
+  "baseline": null
+}

@@ -1,0 +1,13 @@
+Running 2 scenarios on claude-haiku-5-5 (effort low), station 3bin ...
+  FAIL  soda_can_liquid          First, pour out any drink. Then: blue bin, on your left. Empty aluminum cans go in recycli
+        -> should have asked the person (no camera can see this)
+        sorty [verdict]: First, pour out any drink. Then: blue bin, on your left. Empty aluminum cans go in recycling, but any liquid must be poured out first. Thank you!
+        (1 model calls, 3.5 s thinking)
+  PASS  pizza_box_greasy         Green bin, in the middle. Greasy or cheesy pizza boxes go to compost, even the whole box. 
+        sorty [show open_show_inside]: Open the box and show the inside.
+        person: (shows pizza_box_open_greasy.jpg)
+        sorty [verdict]: Green bin, in the middle. Greasy or cheesy pizza boxes go to compost, even the whole box. Thank you!
+        (2 model calls, 3.7 s thinking)
+
+Sorty: 1 of 2 scenarios passed.
+Estimated API cost: $0.00   tokens: {'calls': 3, 'input': 10, 'output': 949, 'cache_read': 18000, 'cache_write': 1335}
