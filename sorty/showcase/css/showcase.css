@@ -101,13 +101,13 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); over
 /* speech bubbles inside the scene */
 .say { position: absolute; max-width: 900px; padding: 26px 38px; border-radius: 40px; font-size: 54px; line-height: 1.15; font-weight: 650;
   box-shadow: 0 18px 50px rgba(0,0,0,.22); transform: translate(-50%, -100%); transition: opacity .25s; }
-.say.sorty { background: #10151C; color: #fff; }
-.say.person { background: #fff; color: #1B1F24; }
+.say.by-sorty { background: #10151C; color: #fff; }
+.say.by-person { background: #fff; color: #1B1F24; }
 .say::after { content: ""; position: absolute; left: 50%; bottom: -26px; margin-left: -22px; border: 22px solid transparent; border-bottom: 0; }
-.say.sorty::after { border-top-color: #10151C; }
-.say.person::after { border-top-color: #fff; }
+.say.by-sorty::after { border-top-color: #10151C; }
+.say.by-person::after { border-top-color: #fff; }
 .say.beside::after { left: -20px; bottom: 50%; margin: 0 0 -22px 0; border: 22px solid transparent; border-left: 0; border-right-color: #10151C; border-top-color: transparent; }
-.say.person.beside::after { border-right-color: #fff; border-top-color: transparent; }
+.say.by-person.beside::after { border-right-color: #fff; border-top-color: transparent; }
 .say .who { display: block; font-size: 30px; font-weight: 600; opacity: .7; margin-bottom: 6px; letter-spacing: .5px; }
 
 /* ---------- explanation strip and answers ---------- */
@@ -118,6 +118,14 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); over
 .tag.see { background: #10291C; color: #7EE2A8; } .tag.look { background: #0F2748; color: #8CC8FF; }
 .tag.ask { background: #2B1D44; color: #D2B6FF; } .tag.check { background: #2A210C; color: #FFD27A; }
 .tag.done { background: #10291C; color: #7EE2A8; } .tag.alert { background: #3A1D10; color: #FFB38A; }
+#sensorBar { display: flex; align-items: center; gap: 14px; background: #0F2748; border: 1px solid #1F4E8C; border-radius: 10px; padding: 8px 12px; }
+#sensorBar[hidden] { display: none; }
+#sensorBar .lbl { color: #B9D4F5; font-size: 14px; line-height: 1.3; }
+.sensor { flex: none; font: inherit; font-size: 18px; font-weight: 700; padding: 12px 22px; border-radius: 12px; border: 0; cursor: pointer;
+  background: #2F81F7; color: #fff; box-shadow: 0 0 0 0 rgba(47,129,247,.7); animation: sensorPulse 1.8s ease-out infinite; }
+.sensor:hover { background: #4C93F8; }
+.sensor:disabled { background: #2B3A52; color: #8FA3BD; cursor: default; animation: none; }
+@keyframes sensorPulse { 0% { box-shadow: 0 0 0 0 rgba(47,129,247,.65); } 100% { box-shadow: 0 0 0 16px rgba(47,129,247,0); } }
 #answerBar { display: flex; align-items: center; gap: 12px; background: #1B2230; border: 1px solid #33415C; border-radius: 10px; padding: 8px 12px; }
 #answerBar[hidden] { display: none; }
 #answerBar .lbl { color: var(--muted); font-size: 15px; }
@@ -133,7 +141,11 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); over
 #kioskWrap { position: relative; width: 100%; overflow: hidden; border-radius: 8px; background: #000; }
 #kiosk { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; border: 0; transform-origin: 0 0; }
 #camBox { position: relative; width: 100%; aspect-ratio: 4 / 3; max-height: 22vh; background: #0B0F14; border-radius: 8px; overflow: hidden; display: grid; place-items: center; }
-#camImg { width: 100%; height: 100%; object-fit: contain; display: none; }
+#camImg { position: relative; width: 100%; height: 100%; object-fit: contain; display: none; }
+#camLive { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform: scaleX(-1); display: none; }
+#camBox.live #camLive { display: block; } #camBox.live #camEmpty { display: none; }
+#camBox.live:not(.has)::before { content: "LIVE"; position: absolute; left: 8px; top: 8px; z-index: 2; font-size: 11px; font-weight: 700; letter-spacing: .6px;
+  background: #D1242F; color: #fff; padding: 2px 7px; border-radius: 4px; }
 #camBox.has #camImg { display: block; } #camBox.has #camEmpty { display: none; }
 #camEmpty { color: var(--muted); font-size: 13px; }
 #camBox.scan::after { content: ""; position: absolute; left: 0; right: 0; height: 18%; top: 0;

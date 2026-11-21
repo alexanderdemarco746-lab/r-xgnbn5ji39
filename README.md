@@ -86,6 +86,15 @@ cd sorty
 
 No physical unit exists yet, so the station is shown as a virtual prototype at http://localhost:8787/showcase/ (start Sorty first). A person walks up, shows an item to the camera, Sorty speaks, and the right bin lights up. The scene is made of Blender renders; the screen next to it is the real kiosk software, running live.
 
+How to use it:
+
+- **Pick an item** in the tray at the bottom. The person walks up with it and the story plays out.
+- **Auto-answer** on: a simulated person answers Sorty's questions. Off: you answer with the buttons that appear under the scene.
+- **Play tour** runs five items in a row, hands-free.
+- **Use my camera** lets you hold a real object up to your webcam (use Chrome or Edge and allow the camera). Press the **Sensor: object in range** button, or the Space key, to start: it stands in for the distance sensor a real bin would have. This needs an API key to be meaningful: in practice mode the answers are scripted and Sorty is not really looking at your object.
+- The right-hand column shows Sorty's real screen, the exact picture sent to the AI, and each step of how Sorty decided.
+- The badge at the top says whether answers come from the live AI or from practice mode (scripted answers, used when no API key is set).
+
 ## Putting it on a real bin
 
 - Any USB or built-in camera, a small screen, a speaker, and a computer that runs a browser and Python (a mini PC or a Raspberry Pi class board). The screen runs the kiosk page full-screen.

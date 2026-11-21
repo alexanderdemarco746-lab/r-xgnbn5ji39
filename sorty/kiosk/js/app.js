@@ -1078,6 +1078,9 @@
       renderLangs(); renderBins(); applyTexts(); renderTrace();
       if (voice.soundBlocked()) $('soundHint').hidden = false;
 
+      // Embedded in the virtual prototype page: that page turns the camera on when the visitor asks for it.
+      if (/[?&]embed=/.test(window.location.search)) { goIdle({ cooldown: 800 }); return; }
+
       // Ask for the camera, but never let a permission prompt hold the screen hostage.
       var settled = false;
       cam.start($('video')).then(function (ok) {

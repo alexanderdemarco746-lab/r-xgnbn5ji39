@@ -51,14 +51,24 @@ class App:
         self.settings = get_settings()
         self.station = load_station(self.settings.station_id)
         self.scenarios = load_scenarios()
-        want_mock = force_mock or os.environ.get("SORTY_MODE", "").lower() == "mock" or not has_api_key()
+        self._forced_mock = force_mock or os.environ.get("SORTY_MODE", "").lower() == "mock"
+        want_mock = self._forced_mock or not has_api_key()
         if want_mock:
             self.brain = MockBrain(self.settings, self.station, self.scenarios)
         else:
             self.brain = Brain(self.settings, station=self.station)
         self.mode = self.brain.mode
 
+    def go_live_if_possible(self) -> None:
+        """Practice mode ends by itself once an API key has been put in .env: no restart needed."""
+        if self.mode == "live" or self._forced_mock or not has_api_key():
+            return
+        self.brain = Brain(self.settings, station=self.station)
+        self.mode = self.brain.mode
+        print(f"API key found: switched to the live brain ({self.settings.model}).", flush=True)
+
     def config(self) -> dict:
+        self.go_live_if_possible()
         s = self.settings
         return {
             "assistant_name": s.assistant_name,

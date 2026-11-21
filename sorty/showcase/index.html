@@ -70,8 +70,8 @@
           <div id="item2" class="item" hidden><img id="item2Img" alt=""></div>
           <div id="ripple" class="ripple" hidden></div>
 
-          <div id="saySorty" class="say sorty" hidden></div>
-          <div id="sayPerson" class="say person" hidden></div>
+          <div id="saySorty" class="say by-sorty" hidden></div>
+          <div id="sayPerson" class="say by-person" hidden></div>
         </div>
         <div id="curtain">Loading the station…</div>
       </div>
@@ -79,6 +79,11 @@
       <div id="why">
         <span id="whyTag" class="tag">Ready</span>
         <span id="whyText">Pick an item below. A person walks up, shows it to Sorty's camera, and Sorty tells them which bin to use.</span>
+      </div>
+
+      <div id="sensorBar" hidden>
+        <button id="btnSensor" class="sensor" type="button">Sensor: object in range</button>
+        <span class="lbl" id="sensorHint">Hold your object up to your webcam, then press this button (or the Space key). It stands in for the distance sensor on a real bin.</span>
       </div>
 
       <div id="answerBar" hidden>
@@ -94,7 +99,7 @@
       </div>
       <div class="panel" id="panelCam">
         <h2>What the camera sees <small id="camNote">the frame sent to the AI</small></h2>
-        <div id="camBox"><img id="camImg" alt=""><span id="camEmpty">Nothing shown yet</span></div>
+        <div id="camBox"><video id="camLive" autoplay muted playsinline></video><img id="camImg" alt=""><span id="camEmpty">Nothing shown yet</span></div>
       </div>
       <div class="panel" id="panelTrace">
         <h2>How Sorty decided <small id="traceTime"></small></h2>

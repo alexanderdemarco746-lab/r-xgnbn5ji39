@@ -254,7 +254,19 @@
   function aimBeam() {
     var el = $('item'); if (el.hidden) return;
     var cx = parseFloat(el.style.left), cy = parseFloat(el.style.top), w = (el._w || 240) / 2 + 26, h = (el._h || 240) / 2 + 26, L = S.stage.lens;
-    $('beam').setAttribute('points', [L[0] + ',' + L[1], (cx - w) + ',' + (cy - h), (cx - w) + ',' + (cy + h), (cx + w) + ',' + (cy + h), (cx + w) + ',' + (cy - h)].join(' '));
+    // the cone runs from the lens to the two corners of the item's box that are furthest apart as seen from the lens
+    var corners = [[cx - w, cy - h], [cx + w, cy - h], [cx + w, cy + h], [cx - w, cy + h]];
+    var mid = Math.atan2(cy - L[1], cx - L[0]), lo = corners[0], hi = corners[0], loA = 9, hiA = -9;
+    corners.forEach(function (c) {
+      var a = Math.atan2(c[1] - L[1], c[0] - L[0]) - mid;
+      a = Math.atan2(Math.sin(a), Math.cos(a));
+      if (a < loA) { loA = a; lo = c; }
+      if (a > hiA) { hiA = a; hi = c; }
+    });
+    $('beam').setAttribute('points', [L[0] + ',' + L[1], lo[0] + ',' + lo[1], hi[0] + ',' + hi[1]].join(' '));
+    var g = $('beamGrad');
+    g.setAttribute('gradientUnits', 'userSpaceOnUse');
+    g.setAttribute('x1', L[0]); g.setAttribute('y1', L[1]); g.setAttribute('x2', cx); g.setAttribute('y2', cy);
     var c = 46, d = '';
     [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (s) {
       var x = cx + s[0] * w, y = cy + s[1] * h;
@@ -361,6 +373,11 @@
     api.demoAnswer = function (b) {
       return o.ans(b).then(function (r) { onPersonSays(r && r.text); return r; });
     };
+    try { var tune = w.Sorty.camera.tune; tune.P_ON = 2; tune.P_LAST = 2; } catch (e) { /* older kiosk */ }
+  }
+  function kioskState() { try { return kw().SortyDebug.state(); } catch (e) { return null; } }
+  function kioskKey(key, code) {
+    try { var w = kw(); w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: key, code: code || '', bubbles: true })); } catch (e) { /* not ready */ }
   }
   function closeKioskPanels() {
     try { var d = kw().document, bd = d.getElementById('backdrop'); if (bd && !bd.hidden) bd.click(); } catch (e) { /* not ready */ }
@@ -431,6 +448,7 @@
     run.over = true;
     markCard(null);
     run.finish();
+    if (S.live) setTimeout(cameraIdle, 60);
   }
 
   function onStart(body) {
@@ -590,7 +608,7 @@
         th.appendChild(img);
         var nm = document.createElement('span'); nm.className = 'name'; nm.textContent = sc.title;
         card.appendChild(th); card.appendChild(nm);
-        card.addEventListener('click', function () { stopTour(); S.live = false; $('btnCam').classList.remove('on'); startRun(sc.id); });
+        card.addEventListener('click', function () { stopTour(); leaveCamera(); startRun(sc.id); });
         wrap.appendChild(card);
       });
       list.appendChild(wrap);
@@ -609,7 +627,7 @@
     if (!ids.length) return;
     var token = S.tour = {};
     $('btnTour').textContent = 'Stop tour'; $('btnTour').classList.add('on');
-    $('optAuto').checked = true; S.autoplay = true; S.live = false; $('btnCam').classList.remove('on');
+    $('optAuto').checked = true; S.autoplay = true; leaveCamera();
     (function next(i) {
       if (S.tour !== token) return;
       if (i >= ids.length) { stopTour(); return; }
@@ -617,27 +635,86 @@
     })(0);
   }
 
-  function useCamera() {
-    stopTour(); cancelRun();
-    var st = null; try { st = S.kiosk && S.kiosk.SortyDebug.state(); } catch (e) { /* ignore */ }
-    if (!st || !st.camera) {
-      why('Camera', 'alert', 'No camera is available to Sorty in this browser. Allow the camera for this page (and reload), or pick an item below.');
-      return;
+  /* ---- camera mode: a real object in front of the visitor's webcam, started by a "sensor" button ---- */
+  function cameraIdle() {
+    if (!S.live) return;
+    $('camBox').classList.remove('has'); $('camBox').classList.add('live');
+    $('sensorBar').hidden = false; $('answerBar').hidden = true;
+    $('person').classList.remove('off'); pose('idle');
+    if (S.cfg.mode === 'live') why('Your camera', 'look', 'Hold a real object up to your webcam, then press the sensor button or the Space key.');
+    else why('Practice mode', 'alert', 'No AI key is set, so Sorty is not really looking at your object: its answers are scripted. Put the key in sorty/.env and reload this page to try it for real.');
+    sensorLabel();
+  }
+  function sensorLabel() {
+    var b = $('btnSensor'), st = kioskState(), k = st && st.state, busy = S.run && !S.run.over;
+    if (k === 'show') { b.textContent = 'Done: look again'; b.disabled = false; }
+    else if (k === 'idle' && !busy) { b.textContent = 'Sensor: object in range'; b.disabled = false; }
+    else if (k === 'ask') { b.textContent = 'Answer below'; b.disabled = true; }
+    else if (k === 'looking') { b.textContent = 'Sorty is looking…'; b.disabled = true; }
+    else { b.textContent = 'Sorty is answering…'; b.disabled = true; }
+  }
+  setInterval(function () { if (S.live) sensorLabel(); }, 300);
+
+  function sensorPressed() {
+    if (!S.live) return;
+    var st = kioskState(); if (!st) return;
+    if (st.state === 'idle') {
+      var z = S.stage.zone, r = $('ripple');            // the "sensor" notices someone in range
+      r.style.left = z[0] + 'px'; r.style.top = z[1] + 'px'; r.style.setProperty('--ripc', '#58A6FF');
+      r.hidden = false; r.classList.remove('go'); void r.offsetWidth; r.classList.add('go');
+      why('Sensor', 'look', 'The sensor reports something in range, so Sorty takes one picture and starts.');
     }
-    S.live = true; $('btnCam').classList.add('on');
-    why('Your camera', 'look', 'Hold a real object up to your webcam and keep it still. Sorty looks by itself, or press Scan on its screen.');
+    if (st.state === 'idle' || st.state === 'show') kioskKey(' ', 'Space');
+  }
+
+  function leaveCamera() {
+    if (!S.live) return;
+    S.live = false;
+    $('btnCam').classList.remove('on'); $('btnCam').textContent = 'Use my camera';
+    $('sensorBar').hidden = true; $('camBox').classList.remove('live');
+  }
+
+  function useCamera() {
+    stopTour();
+    if (S.live) { leaveCamera(); cancelRun(); why('Ready', '', 'Pick an item below.'); return; }
+    if (!S.kioskReady) return;
+    cancelRun();
+    var w = kw(), cam = w.Sorty.camera;
+    function begin() {
+      S.live = true;
+      $('btnCam').classList.add('on'); $('btnCam').textContent = 'Camera on';
+      try { $('camLive').srcObject = w.document.getElementById('video').srcObject; } catch (e) { /* preview only */ }
+      try { w.SortyDebug.idle(); } catch (e) { /* ignore */ }
+      cameraIdle();
+    }
+    // If a key was added since this page loaded, the server is live now: reload so every part agrees.
+    getJSON('/api/config').then(function (c) {
+      if (c.mode !== S.cfg.mode) { window.location.reload(); return; }
+      if (cam.isLive()) { begin(); return; }
+      why('Camera', 'look', 'Asking the browser for your camera. Choose "Allow" if it asks.');
+      cam.start(w.document.getElementById('video')).then(function (ok) {
+        if (ok) begin();
+        else why('Camera', 'alert', 'The browser did not give Sorty a camera. Click the camera icon in the address bar, allow it, then press "Use my camera" again. Use Chrome or Edge.');
+      });
+    });
   }
 
   $('optAuto').addEventListener('change', function () { S.autoplay = this.checked; setKioskAutoplay(S.autoplay); });
   $('btnTour').addEventListener('click', playTour);
   $('btnCam').addEventListener('click', useCamera);
+  $('btnSensor').addEventListener('click', function () { this.blur(); sensorPressed(); });
   $('btnSound').addEventListener('click', function () {
     try { kw().document.getElementById('btnMute').click(); } catch (e) { return; }
     S.sound = !S.sound;
     this.textContent = S.sound ? 'Sound on' : 'Sound off'; this.setAttribute('aria-pressed', String(S.sound));
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') { stopTour(); cancelRun(); why('Ready', '', 'Pick an item below.'); }
+    if (e.key === 'Escape') { stopTour(); cancelRun(); if (S.live) cameraIdle(); else why('Ready', '', 'Pick an item below.'); }
+    else if ((e.key === ' ' || e.code === 'Space') && S.live && !e.repeat) {
+      var t = e.target && e.target.tagName;
+      if (t === 'BUTTON' || t === 'INPUT' || t === 'A') return;        // let Space press a focused control
+      e.preventDefault(); sensorPressed();
+    }
   });
 
   window.SortyShowcase = { state: function () { return { ready: S.kioskReady, run: S.run && { id: S.run.id, kind: S.run.kind, turns: S.run.turns, over: S.run.over }, base: S.base, poses: S.hasPoses, lit: S.litOk, items: Object.keys(S.items).length, scenarios: S.scenarios.length }; }, start: startRun, cancel: cancelRun };

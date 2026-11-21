@@ -12,8 +12,9 @@ saved .blend is touched), then renders everything from ONE fixed "showcase camer
 
 Run:   blender.exe -b --factory-startup -P render_showcase.py
 Options after "--":
-    --steps a,b,c    any of: frame, plates, sprites, json, check   (default: plates,sprites,json,check)
+    --steps a,b,c    any of: frame, plates, sprites, json, check, screencheck   (default: plates,sprites,json,check)
                      "frame" = quick low-res framing checks written to the temp folder only
+                     "screencheck" = diagnostic: screen switched ON with the anchor dots on top (temp folder)
     --tmp DIR        where intermediates and framing checks go (default: system temp)
     --scale 0.5      debug: run the chosen steps at reduced size with few samples, output to the temp folder
 """
@@ -197,7 +198,7 @@ def clean_sprite(arr, feet_px, px_per_m):
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
     fy = (h - 1) - feet_px[1]                                 # rows are bottom-up
     d = np.sqrt((xx - feet_px[0]) ** 2 + ((yy - fy) / 0.5) ** 2) / px_per_m      # ~metres on the floor
-    fade = np.clip((2.0 - d) / (2.0 - 1.0), 0.0, 1.0)
+    fade = np.clip((1.0 - d) / (1.0 - 0.3), 0.0, 1.0)         # full within 0.3 m of the feet, gone by 1.0 m
     fade = fade * fade * (3.0 - 2.0 * fade)
     a2 = np.where(shadow, alpha * fade, alpha)
     a2 = np.where(shadow & (a2 < 2.5 / 255.0), 0.0, a2)        # drop render noise in the empty area
@@ -412,5 +413,24 @@ if "check" in STEPS:
     comp = alpha_over(bg, fg)
     draw_anchors(comp, data)
     save_img(comp, os.path.join(DEST, "_check_composite.jpg"), "JPEG", 90)
+
+if "screencheck" in STEPS:           # does screen.quad really sit on the corners of the lit display area?
+    stage_state(None, None)
+    for name, c in B["SCREENS"].items():
+        c.hide_render = (name != "VERDICT")
+    arr = load_img(render_png(os.path.join(TMP, "screencheck_raw.png"), K, samples=48, threshold=0.06))
+    d = anchors(K)
+    for pt in d["screen"]["quad"] + [d["lens"], d["head"]]:
+        draw_dot(arr, pt[0], pt[1], (1.0, 0.1, 0.1), 2)
+    save_img(arr, os.path.join(TMP, "screencheck.png"), "PNG")
+
+    # are the lit plates really identical to the idle plate away from the light?
+    idle = load_img(os.path.join(DEST, "stage_idle.jpg"))
+    for nm in ("lit_recycle", "lit_compost", "lit_landfill"):
+        lit = load_img(os.path.join(DEST, "stage_%s.jpg" % nm))
+        diff = np.abs(lit[..., :3] - idle[..., :3]).max(axis=2)
+        print("SHOWCASE: %s vs idle (decoded JPEG): %.1f%% of pixels identical, top-left 640x320 block max diff %.0f/255,"
+              " right 300 px column max diff %.0f/255" % (nm, (diff == 0).mean() * 100,
+                                                          diff[-320:, :640].max() * 255, diff[:, -300:].max() * 255))
 
 print("SHOWCASE: done")
