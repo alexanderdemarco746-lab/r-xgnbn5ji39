@@ -575,10 +575,115 @@ def test_instant_alert():
         app.settings.guard = True
 
 
+def test_jev_alert_model():
+    """The instant alert on Jev (TypeSafe AI's decision model). A stand-in answers the web call, so nothing
+    leaves this machine and no key is needed."""
+    import os
+    from brain import guard as load_guard
+    from brain.config import Settings, load_station
+    from brain.imaging import decode_frame
+
+    class Reply:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode()
+
+    seen = {"calls": 0, "fail": False}
+
+    def opener(request, timeout=None):
+        seen["calls"] += 1
+        if seen["fail"]:
+            raise OSError("no connection")
+        seen["url"] = request.full_url
+        seen["headers"] = {k.lower(): v for k, v in request.header_items()}
+        seen["body"] = json.loads(request.data.decode())
+        return Reply(seen["reply"])
+
+    def reply(choice, confidence):
+        return {"model": "jev-1.14.0", "answers": {"label": {"type": "choice", "choice": choice, "confidence": confidence,
+                                                             "probabilities": {choice: confidence}}},
+                "usage": {"input_tokens": 900, "output_tokens": 4}}
+
+    class Net:                                   # stands in for the Claude detector the guard falls back on
+        model = "stand-in-net"
+
+        def __init__(self):
+            self.calls = 0
+
+        def detect(self, frame_bytes):
+            self.calls += 1
+            return {"item": "AA batteries", "category": "battery", "sure": "yes"}
+
+    saved_env = {k: os.environ.get(k) for k in load_guard.JEV_KEY_NAMES}
+    saved_budget = (load_guard.budget.check, load_guard.budget.add)
+    load_guard.budget.check = lambda: None
+    load_guard.budget.add = lambda *a, **k: 0.0
+    for k in load_guard.JEV_KEY_NAMES:
+        os.environ.pop(k, None)
+    os.environ["JEV_API_KEY"] = "test-key"
+    try:
+        s = Settings()
+        det = load_guard.JevDetector(s, opener=opener)
+        seen["reply"] = reply("vape", 0.93)
+        found = det.detect(decode_frame(frame()))
+        body, headers = seen["body"], seen["headers"]
+        check("jev: calls TypeSafe's decision endpoint", seen["url"] == "https://api.typesafe.ai/v1/systemone", seen["url"])
+        check("jev: key sent as a bearer token", headers.get("authorization") == "Bearer test-key")
+        check("jev: image input switched on by its header", headers.get("typesafe-danger-zone-images") == "true", str(headers))
+        ref = body["state"]["camera"]
+        check("jev: the picture is an asset the state refers to", ref in body["assets"] and body["assets"][ref]["format"] == "jpg"
+              and len(body["assets"][ref]["data_base64"]) > 100 and body["model"] == "jev-latest")
+        q = body["questions"]["label"]
+        check("jev: one choice question over the load-wreckers plus none", q["type"] == "choice" and "`camera`" in q["instructions"]
+              and set(q["criteria"]) == set(load_guard.WRECKERS) | {"none"}, str(sorted(q["criteria"])))
+        check("jev: a confident answer counts as sure", found["category"] == "vape" and found["sure"] == "yes" and found["model"] == "jev-1.14.0", str(found))
+        seen["reply"] = reply("vape", 0.55)
+        check("jev: a hesitant answer does not", det.detect(decode_frame(frame()))["sure"] == "no")
+
+        station = load_station("3bin")
+        g = load_guard.LoadGuard(s, station)
+        g.jev, g._claude = load_guard.JevDetector(s, opener=opener), Net()
+        seen["reply"] = reply("plastic_bag", 0.97)
+        look = g.look(frame())
+        check("jev: with a key in .env the alert runs on Jev", look["alert"] and look["category"] == "plastic_bag"
+              and look["model"] == "jev-1.14.0" and g._claude.calls == 0 and g.model == "jev-latest", str(look))
+        seen["reply"] = reply("none", 0.99)
+        check("jev: an ordinary item stays silent", g.look(frame())["alert"] is False)
+        seen["fail"] = True
+        look = g.look(frame())
+        check("jev: if Jev cannot be reached, the Claude alert takes over", look["alert"] and look["category"] == "battery"
+              and look.get("fell_back") is True and look["model"] == "stand-in-net", str(look))
+        seen["fail"] = False
+        s.guard_provider = "claude"
+        calls = seen["calls"]
+        look = g.look(frame())
+        check("jev: can be switched off in favour of Claude", look["model"] == "stand-in-net" and seen["calls"] == calls and "fell_back" not in look)
+        s.guard_provider = ""
+        os.environ.pop("JEV_API_KEY")
+        check("jev: without a key the alert stays on Claude", [type(d).__name__ for d in g.detectors()] == ["Net"]
+              and load_guard.active_model(s) == s.guard_model)
+    finally:
+        load_guard.budget.check, load_guard.budget.add = saved_budget
+        for k, v in saved_env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
 def main() -> int:
     tests = [test_ask_then_verdict, test_show_frame_specialist, test_on_demand_specialist_and_unchanged_frame,
              test_budget_enforced, test_timeout_and_no_tool_nudge, test_failures_end_safely, test_verdict_forms,
-             test_two_bin_station, test_mock_brain, test_server, test_mode_switch, test_instant_alert]
+             test_two_bin_station, test_mock_brain, test_server, test_mode_switch, test_instant_alert,
+             test_jev_alert_model]
     failed = 0
     for fn in tests:
         try:

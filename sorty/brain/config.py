@@ -48,6 +48,11 @@ class Settings:
     guard_model: str = "claude-haiku-5-5"    # the fastest model: one glance, one narrow question
     guard_image_px: int = 512           # a small picture is enough to spot a battery or a bag, and is faster
     guard_wait_s: float = 4.0           # never wait longer than this for the fast look
+    guard_provider: str = ""            # "" = Jev when JEV_API_KEY is in .env, otherwise Claude; "claude" or "jev" forces one
+    jev_model: str = "jev-latest"       # TypeSafe AI's decision model (image input needs Jev 1.13 or newer)
+    jev_image_px: int = 640             # Jev wants each side between 280 and 1568 pixels
+    jev_confidence: float = 0.8         # alert only when Jev's confidence in a load-wrecker is at least this
+    jev_timeout_s: float = 4.0
     station_id: str = "3bin"
     port: int = 8787
     request_timeout_s: float = 45.0
@@ -84,6 +89,9 @@ def get_settings() -> Settings:
     s.gemini_model = env("SORTY_GEMINI_MODEL", s.gemini_model)
     s.guard = env("SORTY_GUARD", "1") not in ("0", "false", "no")
     s.guard_model = env("SORTY_GUARD_MODEL", s.guard_model)
+    s.guard_provider = env("SORTY_GUARD_PROVIDER", s.guard_provider)
+    s.jev_model = env("SORTY_JEV_MODEL", s.jev_model)
+    s.jev_confidence = float(env("SORTY_JEV_CONFIDENCE", str(s.jev_confidence)))
     s.prearm_specialist = env("SORTY_PREARM", "1") not in ("0", "false", "no")
     s.use_fallbacks = env("SORTY_FALLBACKS", "1") not in ("0", "false", "no")
     s.station_id = env("SORTY_STATION", s.station_id)

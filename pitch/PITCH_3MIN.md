@@ -22,7 +22,7 @@ The guide's own elements are covered: introduce the project (Part 1, first sente
 
 ## The script
 
-**369 spoken words.** 273 of them are outside the demo: about 1 minute 57 seconds at a calm 140 words a minute. The live demo of three items takes about 56 seconds, and the speaker talks over the waiting. Total: about **2:53**. At a slow pace it runs past 3:00, so rehearse once with a stopwatch and use the cuts under "If you are behind".
+**About 380 spoken words.** About 284 of them are outside the demo: about 2 minutes 2 seconds at a calm 140 words a minute. The live demo of three items takes about 56 seconds, and the speaker talks over the waiting. Total: about **2:58**, which leaves no slack: use the first cut below if you start late. At a slow pace it runs past 3:00, so rehearse once with a stopwatch and use the cuts under "If you are behind".
 
 The 56 seconds is an estimate from today's measured AI times plus the animation. The page has not been timed with these three items.
 
@@ -54,7 +54,7 @@ Lines starting with `>` are spoken. Lines in [brackets] are what happens on scre
 
 ### Slide 4 on screen: How it works
 
-> How it works: a sensor, for now a button, notices an item; the camera takes one picture, and both models start at once. The careful one, run as a LangGraph graph, finds the deciding fact, then picks one of four moves: answer, ask to see another side, look closer, or ask one question. Then one answer with a reason, and the right bin lights up.
+> How it works: a multi-agent workflow. A sensor notices an item; the camera takes one picture, and two agents start at once: the alert agent and the orchestrator, a LangGraph graph. The orchestrator finds the deciding fact, then picks one of four moves: answer, ask to see another side, call an inspector agent for a closer look, or ask one question. Then one answer with a reason, and the right bin lights up.
 
 ### Showcase page on screen: live demo
 
@@ -92,11 +92,11 @@ Lines starting with `>` are spoken. Lines in [brackets] are what happens on scre
 
 **Part 5. The benefits, today**
 
-> Today: one clear answer with a reason, any bin layout, English or Spanish.
+> Today: one clear answer with a reason, in about a second for the dangerous items.
 
-**Part 6. The potential big benefits**
+**Part 6. The potential big benefits** (the slide shows six, each with its source; say four)
 
-> At scale, a helper at every bin: in one university trial, a trained helper cut wrong items by 85 percent or more.
+> At scale: fewer fires, sorting lines that keep running, cleaner loads, lower costs. In one university trial, a trained helper at the bin cut wrong items by 85 percent or more.
 
 **Close**
 

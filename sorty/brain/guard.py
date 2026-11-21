@@ -22,14 +22,19 @@ call (see ClaudeDetector for the shape of the answer).
 """
 from __future__ import annotations
 
+import base64
 import json
+import os
 import secrets
 import time
+import urllib.request
+import uuid
+from types import SimpleNamespace
 
 import anthropic
 
-from . import phrases
-from .config import Settings
+from . import budget, phrases
+from .config import Settings, load_dotenv
 from .imaging import decode_frame, main_view, to_block
 from .llm import LLM, first_text
 
@@ -140,28 +145,138 @@ class ClaudeDetector:
         return json.loads(first_text(resp))
 
 
+# --------------------------------------------------------------------------
+# Jev, TypeSafe AI's decision model: one Choice question over the picture, answered with a confidence.
+# API shape taken from docs.typesafe.ai (read 21 Nov 2026): POST /v1/systemone, the image as an asset that the
+# state refers to, and the header that switches on image input, which TypeSafe labels experimental.
+# --------------------------------------------------------------------------
+JEV_URL = "https://api.typesafe.ai/v1/systemone"
+JEV_KEY_NAMES = ("JEV_API_KEY", "TYPESAFE_API_KEY")
+
+JEV_CRITERIA = {
+    "battery": "A loose battery of any size or shape, a battery pack or a power bank.",
+    "vape": "An e-cigarette, vape pen or pod.",
+    "electronics": "A phone, tablet, laptop, earbuds, charger, cable, or anything else with a battery or a cord.",
+    "plastic_bag": "An empty or loose plastic bag, plastic film or wrap. Not a chip bag, candy wrapper or pouch.",
+    "bagged_trash": "A tied or stuffed bag with trash inside.",
+    "sharp": "A needle, syringe or razor blade.",
+    "gas_canister": "A propane or camping-gas canister, or a lighter.",
+    "none": "Anything else: a bottle, can, spray can, cup, box, carton, paper, food, wrapper or chip bag, or nothing being presented.",
+}
+JEV_INSTRUCTIONS = (
+    "A person at a waste-sorting station is holding up, or is about to throw away, the object in `camera`. "
+    "Which category is that one object? Judge only the object being presented, not the person, what they wear "
+    "or carry, or the room. Choose none unless the picture makes another category plain."
+)
+
+
+def jev_key() -> str:
+    """The Jev key from sorty/.env (JEV_API_KEY, or TypeSafe's own name TYPESAFE_API_KEY). Empty when there is none."""
+    load_dotenv()
+    for name in JEV_KEY_NAMES:
+        if os.environ.get(name):
+            return os.environ[name]
+    return ""
+
+
+def active_model(settings: Settings) -> str:
+    """The name of the model the instant alert uses right now."""
+    if (settings.guard_provider or "").lower() != "claude" and jev_key():
+        return settings.jev_model
+    return settings.guard_model
+
+
+class JevDetector:
+    """The fast check on Jev: one picture, one Choice question, an answer with a confidence from 0 to 1."""
+
+    def __init__(self, settings: Settings, opener=None) -> None:
+        self.s = settings
+        self.model = settings.jev_model
+        self._open = opener or urllib.request.urlopen          # tests hand in a stand-in
+
+    def available(self) -> bool:
+        return bool(jev_key())
+
+    def detect(self, frame: bytes) -> dict:
+        budget.check()
+        view = main_view(frame, self.s.jev_image_px)
+        ref = str(uuid.uuid4())                                # TypeSafe asks for a fresh reference per image
+        body = {
+            "model": self.model,
+            "state": {"camera": ref},
+            "assets": {ref: {"type": "image", "format": "jpg", "data_base64": base64.b64encode(view).decode("ascii")}},
+            "questions": {"label": {"type": "choice", "instructions": JEV_INSTRUCTIONS, "criteria": JEV_CRITERIA}},
+        }
+        request = urllib.request.Request(JEV_URL, data=json.dumps(body).encode("utf-8"), method="POST", headers={
+            "Authorization": "Bearer " + jev_key(),
+            "Content-Type": "application/json",
+            "TypeSafe-Danger-Zone-Images": "true",
+        })
+        with self._open(request, timeout=self.s.jev_timeout_s) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        answer = data["answers"]["label"]
+        choice = str(answer.get("choice", "none"))
+        confidence = float(answer.get("confidence") or 0.0)
+        usage = data.get("usage") or {}
+        budget.add("jev", SimpleNamespace(input_tokens=usage.get("input_tokens", 0), output_tokens=usage.get("output_tokens", 0)))
+        return {"item": "", "category": choice, "sure": "yes" if confidence >= self.s.jev_confidence else "no",
+                "confidence": round(confidence, 3), "model": str(data.get("model") or self.model)}
+
+
 class LoadGuard:
     def __init__(self, settings: Settings, station: dict, llm: LLM | None = None, detector=None) -> None:
         self.s = settings
         self.station = station
-        self.detector = detector or ClaudeDetector(llm or LLM(settings), settings)
-        self.model = getattr(self.detector, "model", "on-device detector")
+        self._fixed = detector                  # a stand-in (tests) or a model running on the bin's own computer
+        self._llm = llm
+        self._claude = None
+        self.jev = JevDetector(settings)
+
+    def _claude_detector(self) -> ClaudeDetector:
+        if self._claude is None:
+            self._claude = ClaudeDetector(self._llm or LLM(self.s), self.s)
+        return self._claude
+
+    def detectors(self) -> list:
+        """The detector to use now, followed by the one to fall back on if it fails."""
+        if self._fixed is not None:
+            return [self._fixed]
+        if (self.s.guard_provider or "").lower() != "claude" and self.jev.available():
+            return [self.jev, self._claude_detector()]         # Jev when its key is in .env; Claude Haiku as the net
+        return [self._claude_detector()]
+
+    @property
+    def model(self) -> str:
+        return getattr(self.detectors()[0], "model", "on-device detector")
 
     def look(self, image_b64: str) -> dict:
         """One fast look at a camera frame. Never raises.
 
-        Returns {"alert": bool, "category", "item", "sure", "ms"}; on a failure
+        Returns {"alert": bool, "category", "item", "sure", "ms", "model"}; on a failure
         {"alert": False, "error", "ms"}. An alert needs a known category and a sure answer.
         """
         t0 = time.monotonic()
+        error = "no detector"
         try:
-            found = self.detector.detect(decode_frame(image_b64))
-            category, sure = str(found.get("category", "none")), str(found.get("sure", "no"))
-            item = str(found.get("item", "")).strip()[:60]
-        except Exception as exc:                      # a failed glance must never hold up the careful answer
+            frame = decode_frame(image_b64)
+        except Exception as exc:
             return {"alert": False, "error": type(exc).__name__, "ms": int((time.monotonic() - t0) * 1000)}
-        return {"alert": category in WRECKERS and sure == "yes", "category": category, "item": item,
-                "sure": sure, "ms": int((time.monotonic() - t0) * 1000)}
+        for n, detector in enumerate(self.detectors()):
+            try:
+                found = detector.detect(frame)
+                category, sure = str(found.get("category", "none")), str(found.get("sure", "no"))
+                look = {"alert": category in WRECKERS and sure == "yes", "category": category,
+                        "item": str(found.get("item", "")).strip()[:60], "sure": sure,
+                        "ms": int((time.monotonic() - t0) * 1000),
+                        "model": str(found.get("model") or getattr(detector, "model", "on-device detector"))}
+                if "confidence" in found:
+                    look["confidence"] = found["confidence"]
+                if n:
+                    look["fell_back"] = True                   # the first detector failed; this answer is from the net
+                return look
+            except Exception as exc:                           # a failed glance must never hold up the careful answer
+                error = type(exc).__name__
+        return {"alert": False, "error": error, "ms": int((time.monotonic() - t0) * 1000)}
 
 
 def alert_turn(station: dict, category: str, item: str, lang: str, ms: int, source: str) -> dict:

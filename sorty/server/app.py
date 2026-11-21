@@ -139,11 +139,11 @@ class App:
         if look and look.get("alert"):
             careful.add_done_callback(lambda f: self._forget(brain, f))     # the careful pass is no longer needed
             return load_guard.alert_turn(self.station, look["category"], look["item"], lang, look["ms"],
-                                         f"fast check, {guard.model}")
+                                         f"fast check, {look.get('model') or guard.model}")
         turn = careful.result()
         if look and "error" not in look:
             note = {"t_ms": look["ms"], "kind": "guard",
-                    "text": f"Fast check ({guard.model}, {look['ms'] / 1000:.1f} s): nothing that wrecks a load"}
+                    "text": f"Fast check ({look.get('model') or guard.model}, {look['ms'] / 1000:.1f} s): nothing that wrecks a load"}
             sess = getattr(brain, "sessions", {}).get(turn.get("session_id"))
             if sess is not None and isinstance(getattr(sess, "trace", None), list):
                 sess.trace.insert(min(1, len(sess.trace)), note)            # later turns keep the line too
@@ -165,7 +165,7 @@ class App:
         if guard is None:
             return {"alert": False, "error": "instant alert is not running"}
         look = guard.look(image)
-        look["model"] = guard.model
+        look.setdefault("model", guard.model)
         return look
 
     def go_live_if_possible(self) -> None:
@@ -217,7 +217,7 @@ class App:
             "mode": self.mode,
             "model": getattr(self.brain, "model_id", s.model) if self.mode == "live" else None,
             "orchestrator": s.orchestrator if self.mode == "live" else None,
-            "guard": {"on": bool(s.guard), "model": s.guard_model if self.mode == "live" else None},
+            "guard": {"on": bool(s.guard), "model": load_guard.active_model(s) if self.mode == "live" else None},
             "lang_default": "en",
             "languages": s.languages,
             "station": {"id": self.station["id"], "name": self.station.get("name", ""), "bins": self.station["bins"]},

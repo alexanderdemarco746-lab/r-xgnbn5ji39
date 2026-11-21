@@ -43,11 +43,15 @@ def main() -> None:
     ap.add_argument("--repeat", type=int, default=1)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--model", default="")
+    ap.add_argument("--provider", default="", help="'jev' or 'claude'; default: Jev when its key is in .env, else Claude")
+    ap.add_argument("--tag", default="", help="suffix for the report files, e.g. 'jev' writes GUARD_jev.md")
     args = ap.parse_args()
 
     settings = get_settings()
     if args.model:
         settings.guard_model = args.model
+    if args.provider:
+        settings.guard_provider = args.provider
     guard = LoadGuard(settings, load_station(settings.station_id))
     spent_before = budget.spent_usd()
     pictures = sorted(p for p in IMAGES.glob("*.jpg"))
@@ -65,6 +69,7 @@ def main() -> None:
     wall = time.monotonic() - t0
 
     rows, caught, wreckers, false_alarms, ordinary, errors, times = [], 0, 0, 0, 0, 0, []
+    models, fell_back = set(), 0
     for name, look in looks:
         want = WRECKER_PICTURES.get(name)
         if "error" in look:
@@ -82,14 +87,18 @@ def main() -> None:
             ordinary += 1
             false_alarms += bool(look["alert"])
             result = "FALSE ALARM" if look["alert"] else "silent, correct"
-        rows.append((name, want or "-", said, look.get("item", ""), look["ms"], result))
+        saw = look.get("item") or (f"confidence {look['confidence']}" if "confidence" in look else "")
+        models.add(look.get("model", guard.model))
+        fell_back += bool(look.get("fell_back"))
+        rows.append((name, want or "-", said, saw, look["ms"], result))
 
     times.sort()
     median = statistics.median(times) if times else 0
     slowest = times[-1] if times else 0
     cost = budget.spent_usd() - spent_before
     summary = {
-        "model": guard.model, "pictures": len(pictures), "repeat": args.repeat,
+        "model": ", ".join(sorted(models)) or guard.model, "fell_back_to_second_model": fell_back,
+        "pictures": len(pictures), "repeat": args.repeat,
         "wreckers_shown": wreckers, "wreckers_caught": caught,
         "ordinary_shown": ordinary, "false_alarms": false_alarms, "errors": errors,
         "median_ms": int(median), "slowest_ms": int(slowest), "cost_usd": round(cost, 4),
@@ -98,7 +107,7 @@ def main() -> None:
 
     lines = [
         "# Instant alert test report", "",
-        f"Run: {summary['when']}  |  fast model: `{guard.model}`  |  picture size: {settings.guard_image_px} px  |  "
+        f"Run: {summary['when']}  |  fast model: `{summary['model']}`  |  answers from the fallback model: {fell_back}  |  "
         f"pictures: Blender renders in `tests/images`  |  estimated API cost of this run: ${cost:.3f}", "",
         "## Result", "",
         "| What was shown | Result |", "|---|---|",
@@ -117,8 +126,9 @@ def main() -> None:
               "- A missed alert is not a wrong answer: the careful model still sends the item to the right place, a few seconds later.",
               "- A false alarm would be a wrong answer, which is why the fast model is told to stay silent unless it is sure."]
     RESULTS.mkdir(exist_ok=True)
-    (RESULTS / "GUARD.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    (RESULTS / "guard.json").write_text(json.dumps({"summary": summary, "rows": rows}, indent=1), encoding="utf-8")
+    suffix = ("_" + args.tag) if args.tag else ""
+    (RESULTS / f"GUARD{suffix}.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (RESULTS / f"guard{suffix}.json").write_text(json.dumps({"summary": summary, "rows": rows}, indent=1), encoding="utf-8")
 
     for name, want, said, item, ms, result in rows:
         print(f"{result:16} {name:28} want={want:13} said={said:13} {ms:5} ms  {item}")
