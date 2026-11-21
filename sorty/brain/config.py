@@ -37,7 +37,7 @@ class Settings:
     model: str = "claude-opus-5-5"
     effort: str = "low"                 # main loop: latency matters at a bin
     specialist_model: str = ""          # empty -> same as model
-    specialist_effort: str = "medium"   # inspection passes favour precision
+    specialist_effort: str = "low"      # measured live: medium added seconds to every second look
     speed: str = ""                     # "fast" enables fast mode (costs more)
     use_fallbacks: bool = True          # server-side refusal fallback
     station_id: str = "3bin"

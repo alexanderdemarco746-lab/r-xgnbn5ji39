@@ -63,6 +63,13 @@
     if (S.cfg.mode === 'live') { b.textContent = 'Live AI: ' + (S.cfg.model || 'Claude'); b.className = 'badge live'; }
     else { b.textContent = 'Practice mode: scripted answers, no AI key'; b.className = 'badge practice'; }
     b.hidden = false;
+    var m = $('budget'), bud = S.cfg.budget;
+    if (bud && (S.cfg.mode === 'live' || bud.exhausted)) {
+      m.textContent = bud.exhausted ? 'AI budget used up: $' + bud.spent_usd.toFixed(2) + ' of $' + bud.limit_usd.toFixed(2)
+        : 'AI spend: $' + bud.spent_usd.toFixed(2) + ' of $' + bud.limit_usd.toFixed(2);
+      m.className = 'badge spend' + (bud.spent_usd >= bud.limit_usd * 0.8 ? ' low' : '');
+      m.hidden = false;
+    } else m.hidden = true;
   }
 
   function buildStage() {
@@ -211,6 +218,22 @@
     el.style.opacity = 1; el.hidden = !(meta || photoUrl);
     el._h = h; el._w = w;
   }
+  /* Camera mode: the person holds a card showing the visitor's live webcam, so everyone sees what is being shown. */
+  function liveCard(on) {
+    var el = $('item');
+    if (!on) { el.classList.remove('livecard'); return; }
+    var hands = S.stage.person.hands;
+    try { $('itemVid').srcObject = kw().document.getElementById('video').srcObject; } catch (e) { /* preview only */ }
+    el.classList.add('card', 'livecard');
+    el.style.transition = '';
+    el.style.width = '470px'; el.style.height = '352px'; el._w = 470; el._h = 352;
+    el.style.left = hands[0] + 'px'; el.style.top = hands[1] + 'px'; el.style.opacity = 1; el.hidden = false;
+  }
+  function flashCard() {
+    var el = $('item'); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+    setTimeout(function () { el.classList.remove('flash'); }, 450);
+  }
+
   function itemLower(on) {                       // carried low while walking, raised to the camera when presenting
     var el = $('item'), hands = S.stage.person.hands, ppm = S.stage.person.px_per_m_at_hands || 480;
     el.style.transition = 'top .35s ease';
@@ -430,7 +453,8 @@
     run.done = new Promise(function (res) { run.finish = res; });
     markCard(run.id);
     resetStage();
-    setItem($('item'), run.key, run.photo);
+    if (sc) setItem($('item'), run.key, run.photo);
+    else { liveCard(true); flashCard(); }
     $('person').classList.remove('off'); pose('present');
     beam(true);
   }
@@ -461,7 +485,7 @@
     var run = S.run;
     if (!run || run.over) return null;
     if (body.type === 'frame') {
-      if (run.kind === 'live') { run.photo = 'data:image/jpeg;base64,' + body.image; setItem($('item'), null, run.photo); aimBeam(); }
+      if (run.kind === 'live') { run.photo = 'data:image/jpeg;base64,' + body.image; flashCard(); }
       showCam(body.image); camScan(true); mini('looking'); beam(true);
       return run.acting || null;                       // let the person finish moving before the new frame is sent
     }
@@ -534,6 +558,7 @@
     var special = steps.some(function (s) { return s.kind === 'special'; }), keep = steps.some(function (s) { return s.kind === 'keep'; });
     var used = (turn.trace || []).some(function (t) { return t.kind === 'specialist'; });
     beam(false); $('answerBar').hidden = true;
+    if (run.kind === 'live') { liveCard(false); setItem($('item'), null, run.photo); }
     say('sorty', turn.say);
     if (binSteps.length) { mini('verdict', binSteps[0].bin); lit(binSteps[0].bin); }
     else if (special) { mini('alert'); lit(null, true); }
@@ -640,18 +665,27 @@
     if (!S.live) return;
     $('camBox').classList.remove('has'); $('camBox').classList.add('live');
     $('sensorBar').hidden = false; $('answerBar').hidden = true;
-    $('person').classList.remove('off'); pose('idle');
+    $('person').classList.remove('off'); pose('present');
+    liveCard(true); beam(true);
     if (S.cfg.mode === 'live') why('Your camera', 'look', 'Hold a real object up to your webcam, then press the sensor button or the Space key.');
     else why('Practice mode', 'alert', 'No AI key is set, so Sorty is not really looking at your object: its answers are scripted. Put the key in sorty/.env and reload this page to try it for real.');
     sensorLabel();
   }
+  /* Tell the presenter, at every moment, whether it is their turn to press the button. */
   function sensorLabel() {
-    var b = $('btnSensor'), st = kioskState(), k = st && st.state, busy = S.run && !S.run.over;
-    if (k === 'show') { b.textContent = 'Done: look again'; b.disabled = false; }
-    else if (k === 'idle' && !busy) { b.textContent = 'Sensor: object in range'; b.disabled = false; }
-    else if (k === 'ask') { b.textContent = 'Answer below'; b.disabled = true; }
-    else if (k === 'looking') { b.textContent = 'Sorty is looking…'; b.disabled = true; }
-    else { b.textContent = 'Sorty is answering…'; b.disabled = true; }
+    var b = $('btnSensor'), hint = $('sensorHint'), cue = $('pressCue');
+    var st = kioskState(), k = st && st.state, busy = S.run && !S.run.over;
+    var text, tip, press = false, show = true;
+    if (k === 'show') { text = 'Done: look again'; tip = 'Do what Sorty asked, hold it still, then press the button or Space.'; press = true; }
+    else if (k === 'idle' && !busy) { text = 'Sensor: object in range'; tip = 'Your turn: hold your object up to the camera, then press the button or Space.'; press = true; }
+    else if (k === 'ask') { text = 'Answer below'; tip = 'Sorty asked a question: answer with the buttons below, or say it out loud.'; }
+    else if (k === 'looking') { text = 'Sorty is looking…'; tip = 'Wait: Sorty is looking at your picture.'; }
+    else { text = 'Sorty is answering…'; tip = 'Sorty is answering. The button comes back in a moment.'; show = false; }
+    b.textContent = text; b.disabled = !press; hint.textContent = tip;
+    cue.textContent = k === 'show' ? 'Do it, then press SPACE' : press ? 'Press SPACE now' : k === 'ask' ? 'Answer the question' : 'Wait…';
+    cue.classList.toggle('wait', !press);
+    cue.style.left = (S.W / 2) + 'px'; cue.style.top = (S.H - 150) + 'px';
+    cue.hidden = !show;
   }
   setInterval(function () { if (S.live) sensorLabel(); }, 300);
 
@@ -672,6 +706,8 @@
     S.live = false;
     $('btnCam').classList.remove('on'); $('btnCam').textContent = 'Use my camera';
     $('sensorBar').hidden = true; $('camBox').classList.remove('live');
+    $('pressCue').hidden = true; document.body.classList.remove('cam-on');
+    liveCard(false); $('item').hidden = true; beam(false);
   }
 
   function useCamera() {
@@ -681,7 +717,7 @@
     cancelRun();
     var w = kw(), cam = w.Sorty.camera;
     function begin() {
-      S.live = true;
+      S.live = true; document.body.classList.add('cam-on');
       $('btnCam').classList.add('on'); $('btnCam').textContent = 'Camera on';
       try { $('camLive').srcObject = w.document.getElementById('video').srcObject; } catch (e) { /* preview only */ }
       try { w.SortyDebug.idle(); } catch (e) { /* ignore */ }
@@ -719,8 +755,11 @@
 
   /* Practice mode ends by itself: once a key is saved in sorty/.env the server goes live, and so does this page. */
   setInterval(function () {
-    if (!S.cfg || S.cfg.mode === 'live' || (S.run && !S.run.over)) return;
-    getJSON('/api/config').then(function (c) { if (c.mode === 'live') window.location.reload(); }).catch(function () {});
+    if (!S.cfg || (S.run && !S.run.over)) return;
+    getJSON('/api/config').then(function (c) {
+      if (c.mode !== S.cfg.mode) { window.location.reload(); return; }      // a key was added, or the budget ran out
+      S.cfg.budget = c.budget; setBadge();
+    }).catch(function () {});
   }, 4000);
 
   window.SortyShowcase = { state: function () { return { ready: S.kioskReady, run: S.run && { id: S.run.id, kind: S.run.kind, turns: S.run.turns, over: S.run.over }, base: S.base, poses: S.hasPoses, lit: S.litOk, items: Object.keys(S.items).length, scenarios: S.scenarios.length }; }, start: startRun, cancel: cancelRun };

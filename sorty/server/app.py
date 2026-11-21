@@ -22,6 +22,7 @@ if str(ROOT) not in sys.path:
 
 from brain import Brain, get_settings, has_api_key, load_station  # noqa: E402
 from brain.mock_brain import MockBrain  # noqa: E402
+from brain import budget  # noqa: E402
 from brain.persona import simulated_answer  # noqa: E402
 
 KIOSK_DIR = ROOT / "kiosk"
@@ -67,8 +68,17 @@ class App:
         self.mode = self.brain.mode
         print(f"API key found: switched to the live brain ({self.settings.model}).", flush=True)
 
+    def stop_if_budget_used(self) -> None:
+        """Once the AI budget is used up, stop calling the AI and run in practice mode."""
+        if self.mode == "live" and budget.exhausted():
+            self.brain = MockBrain(self.settings, self.station, self.scenarios)
+            self.mode = self.brain.mode
+            self._forced_mock = True
+            print(f"AI budget used up (about ${budget.spent_usd():.2f}): back to practice mode.", flush=True)
+
     def config(self) -> dict:
         self.go_live_if_possible()
+        self.stop_if_budget_used()
         s = self.settings
         return {
             "assistant_name": s.assistant_name,
@@ -78,6 +88,7 @@ class App:
             "languages": s.languages,
             "station": {"id": self.station["id"], "name": self.station.get("name", ""), "bins": self.station["bins"]},
             "timeouts": {"answer_s": s.answer_timeout_s, "show_s": s.show_timeout_s, "verdict_hold_s": s.verdict_hold_s},
+            "budget": budget.status(),
         }
 
     def notify(self, turn: dict) -> None:
@@ -250,7 +261,7 @@ class Handler(BaseHTTPRequestHandler):
 def make_server(port: int | None = None, force_mock: bool = False) -> tuple[ThreadingHTTPServer, App]:
     app = App(force_mock=force_mock)
     handler = type("BoundHandler", (Handler,), {"app": app})
-    server = ThreadingHTTPServer(("127.0.0.1", port or app.settings.port), handler)
+    server = ThreadingHTTPServer(("127.0.0.1", app.settings.port if port is None else port), handler)
     server.daemon_threads = True
     return server, app
 

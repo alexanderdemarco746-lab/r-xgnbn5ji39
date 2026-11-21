@@ -68,6 +68,17 @@ def lower_first(text: str) -> str:
     return text[:1].lower() + text[1:] if text else text
 
 
+def clean_prep(text: str) -> str:
+    """One short action. The verdict sentence adds "First, ... Then: ..." itself, so drop those words here."""
+    import re
+    text = text.strip().rstrip(".!")
+    # keep only the first action: "pour it out, then rinse" -> "pour it out"
+    text = re.split(r"\s*[,;]\s*(?:and\s+)?then\s|\s+and\s+then\s|\s*;\s*", text, maxsplit=1, flags=re.I)[0]
+    text = re.sub(r"^(?:first|primero)\s*,?\s+", "", text, flags=re.I)
+    text = re.sub(r"\s*,?\s+(?:first|primero)$", "", text, flags=re.I)
+    return text.strip().rstrip(",.")
+
+
 def sentence(text: str) -> str:
     text = text.strip()
     if text and text[-1] not in ".!?":

@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 import anthropic
 from PIL import Image
 
-from . import phrases, prompts
+from . import budget, phrases, prompts
 from .config import Settings, get_settings, load_station
 from .imaging import BadImage, decode_frame, main_view, to_block
 from .llm import LLM
@@ -229,6 +229,8 @@ class Brain:
     def _advance_safely(self, sess: Session, t0: float) -> dict:
         try:
             return self._advance(sess, t0)
+        except budget.BudgetExceeded as exc:
+            return self._error_turn(sess, t0, str(exc))
         except anthropic.AuthenticationError:
             return self._error_turn(sess, t0, "the API key was rejected")
         except anthropic.PermissionDeniedError:
@@ -373,7 +375,7 @@ class Brain:
             items.append({
                 "item": phrases.cap(str(raw.get("item", "")).strip()) or "Item",
                 "bin": bin_id,
-                "prep": str(raw.get("prep", "")).strip().rstrip("."),
+                "prep": phrases.clean_prep(str(raw.get("prep", ""))),
                 "dest": str(raw.get("special_dest", "")).strip().rstrip("."),
             })
         if not items:

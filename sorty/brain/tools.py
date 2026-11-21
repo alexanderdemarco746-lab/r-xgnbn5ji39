@@ -102,7 +102,7 @@ def build_tools(station: dict) -> list[dict]:
                     "items": _obj({
                         "item": {"type": "string", "description": "Plain name, one to three words, e.g. 'Greasy pizza box'"},
                         "bin": {"type": "string", "enum": bin_ids},
-                        "prep": {"type": "string", "description": "What to do before binning, verb first, at most six words. Empty string when nothing."},
+                        "prep": {"type": "string", "description": "One action needed before binning, verb first, at most six words, without the words 'first' or 'then', e.g. 'Pour out the soda'. Only when really needed. Empty string when nothing."},
                         "special_dest": {"type": "string", "description": "Where it goes when bin is 'special', e.g. 'the battery drop-off'. Empty string otherwise."},
                     }),
                 },

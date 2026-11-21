@@ -15,6 +15,7 @@
       <strong>Sorty</strong>
       <span class="sub">virtual prototype</span>
       <span id="modeBadge" class="badge" hidden></span>
+      <span id="budget" class="badge" hidden title="Estimated AI spending against the limit"></span>
     </div>
     <div class="controls">
       <label class="toggle" title="A simulated person answers Sorty's questions">
@@ -66,9 +67,11 @@
             <g id="brackets" opacity="0" fill="none" stroke="#9BD1FF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></g>
           </svg>
 
-          <div id="item" class="item" hidden><img id="itemImg" alt=""></div>
+          <div id="item" class="item" hidden><img id="itemImg" alt=""><video id="itemVid" autoplay muted playsinline></video></div>
           <div id="item2" class="item" hidden><img id="item2Img" alt=""></div>
           <div id="ripple" class="ripple" hidden></div>
+
+          <div id="pressCue" class="press-cue" hidden></div>
 
           <div id="saySorty" class="say by-sorty" hidden></div>
           <div id="sayPerson" class="say by-person" hidden></div>
@@ -99,7 +102,7 @@
       </div>
       <div class="panel" id="panelCam">
         <h2>What the camera sees <small id="camNote">the frame sent to the AI</small></h2>
-        <div id="camBox"><video id="camLive" autoplay muted playsinline></video><img id="camImg" alt=""><span id="camEmpty">Nothing shown yet</span></div>
+        <div id="camBox"><video id="camLive" autoplay muted playsinline></video><img id="camImg" alt=""><span id="camSent" hidden>sent to the AI</span><span id="camEmpty">Nothing shown yet</span></div>
       </div>
       <div class="panel" id="panelTrace">
         <h2>How Sorty decided <small id="traceTime"></small></h2>

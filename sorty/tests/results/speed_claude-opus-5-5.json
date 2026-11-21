@@ -1,0 +1,180 @@
+{
+  "meta": {
+    "when": "2026-11-21 15:02",
+    "model": "claude-opus-5-5",
+    "effort": "low",
+    "station": "3bin",
+    "cost_usd": 0.0532,
+    "usage": {
+      "calls": 6,
+      "input": 3690,
+      "output": 1206,
+      "cache_read": 23860,
+      "cache_write": 1901
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "pizza_box_greasy",
+      "title": "Pizza box, greasy inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "show",
+          "say": "Open the box and show the inside.",
+          "action": "open_show_inside"
+        },
+        {
+          "person": "(shows pizza_box_open_greasy.jpg)"
+        },
+        {
+          "sorty": "verdict",
+          "say": "Green bin, in the middle. Greasy pizza boxes and crumbs go in compost. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 1,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "show",
+          "action": "open_show_inside",
+          "say": "Open the box and show the inside.",
+          "item_seen": "Pizza box",
+          "then_check": "contamination"
+        },
+        {
+          "event": "frame",
+          "unchanged": false
+        },
+        {
+          "event": "specialist",
+          "check": "contamination",
+          "result": {
+            "surface_inspected": "Inside base of the open pizza box (the floor of the box), with the inner walls and lid underside also in view",
+            "surface_visible": "yes",
+            "food_or_grease_present": "yes",
+            "severity": "heavy",
+            "coverage_percent": 65,
+            "liquid_visible": "no",
+            "evidence": "The inside is clearly visible: a large, soft-edged dark brown grease stain has soaked into most of the box floor, with dozens of crumbs, dark charred bits and several stuck-on cheese or topping pieces on top of it, but no pooled liquid.",
+            "confidence": "high"
+          }
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Greasy pizza box",
+              "bin": "compost",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Greasy pizza boxes and crumbs go in compost.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 12.0,
+      "wall_seconds": 12.0,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "Green bin, in the middle. Greasy pizza boxes and crumbs go in compost. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "compost",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Greasy pizza box",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          }
+        ],
+        "reason": "Greasy pizza boxes and crumbs go in compost.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "soda_can_liquid",
+      "title": "Soda can, half full",
+      "group": "Must ask",
+      "transcript": [
+        {
+          "sorty": "ask",
+          "say": "Is there any drink left inside?"
+        },
+        {
+          "person": "Yeah, it's still about half full."
+        },
+        {
+          "sorty": "verdict",
+          "say": "First, pour drink into a sink first. Then: blue bin, on your left. Empty cans recycle, but drinks never go in bins. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 0,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "ask",
+          "question": "Is there any drink left inside?",
+          "fact": "liquid inside",
+          "item_seen": "Soda can"
+        },
+        {
+          "event": "answer",
+          "text": "Yeah, it's still about half full."
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Soda can",
+              "bin": "recycle",
+              "prep": "Pour drink into a sink first",
+              "dest": ""
+            }
+          ],
+          "reason": "Empty cans recycle, but drinks never go in bins.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 5.0,
+      "wall_seconds": 6.0,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "First, pour drink into a sink first. Then: blue bin, on your left. Empty cans recycle, but drinks never go in bins. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "recycle",
+        "steps": [
+          {
+            "kind": "prep",
+            "text": "Pour drink into a sink first"
+          },
+          {
+            "kind": "bin",
+            "item": "Soda can",
+            "bin": "recycle",
+            "position": "left",
+            "text": "Blue bin, on your left"
+          }
+        ],
+        "reason": "Empty cans recycle, but drinks never go in bins.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    }
+  ],
+  "baseline": null
+}

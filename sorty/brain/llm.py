@@ -10,6 +10,7 @@ import threading
 
 import anthropic
 
+from . import budget
 from .config import Settings
 
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
@@ -67,6 +68,7 @@ class LLM:
         # Credentials come from the environment (ANTHROPIC_API_KEY, loaded from .env).
         self.client = client or anthropic.Anthropic(timeout=settings.request_timeout_s, max_retries=settings.api_retries)
         self._fallbacks = settings.use_fallbacks
+        self.guard_budget = client is None        # a stand-in client (tests) spends nothing and is not tracked
         self.usage = Usage()
 
     def create(self, *, model: str, effort: str, output_config: dict | None = None, **kwargs):
@@ -79,6 +81,8 @@ class LLM:
         )
         if self.settings.speed == "fast":
             params["speed"] = "fast"
+        if self.guard_budget:
+            budget.check()                       # raises BudgetExceeded once the spending limit is reached
 
         if self._fallbacks and supports_fallbacks(model):
             try:
@@ -94,6 +98,8 @@ class LLM:
         else:
             resp = self.client.beta.messages.create(**params)
         self.usage.add(getattr(resp, "usage", None))
+        if self.guard_budget:
+            budget.add(model, getattr(resp, "usage", None))
         return resp
 
 

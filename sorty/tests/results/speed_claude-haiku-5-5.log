@@ -1,0 +1,15 @@
+Running 2 scenarios on claude-haiku-5-5 (effort low), station 3bin ...
+  PASS  soda_can_liquid          First, pour out the drink first, then rinse lightly. Then: blue bin, on your left. Thank y
+        sorty [ask]: Is this can completely empty?
+        person: No, it's not empty. It's still about half full.
+        sorty [verdict]: First, pour out the drink first, then rinse lightly. Then: blue bin, on your left. Thank you!
+        (2 model calls, 6.1 s thinking)
+  PASS  pizza_box_greasy         First, scrape out loose food first. Then: green bin, in the middle. Greasy or food-soiled 
+        sorty [show open_show_inside]: Open the box lid, please, and show the inside.
+        person: (shows pizza_box_open_greasy.jpg)
+        sorty [verdict]: First, scrape out loose food first. Then: green bin, in the middle. Greasy or food-soiled paper goes to compost, not recycling. Thank you!
+        specialist contamination: {"surface_inspected": "interior base of the pizza box, full view and zoomed crop", "surface_visible": "yes", "food_or_grease_present": "yes", "severity": "heavy", "coverage_percent": 60, "liquid_visible": "cannot_see", "
+        (2 model calls, 9.1 s thinking)
+
+Sorty: 2 of 2 scenarios passed.
+Estimated API cost: $0.00   tokens: {'calls': 6, 'input': 3694, 'output': 1571, 'cache_read': 11930, 'cache_write': 13992}

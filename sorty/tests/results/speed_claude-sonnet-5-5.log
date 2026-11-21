@@ -1,0 +1,15 @@
+Running 2 scenarios on claude-sonnet-5-5 (effort low), station 3bin ...
+  PASS  soda_can_liquid          First, pour out the cola first. Then: blue bin, on your left. Aluminum cans are recyclable
+        sorty [ask]: Is the can completely empty?
+        person: Nope, it's still about half full. I don't want the rest, though.
+        sorty [verdict]: First, pour out the cola first. Then: blue bin, on your left. Aluminum cans are recyclable once the liquid is poured out. Thank you!
+        (2 model calls, 5.9 s thinking)
+  PASS  pizza_box_greasy         Green bin, in the middle. Greasy or cheesy pizza boxes go to compost, whole box. Thank you
+        sorty [show open_show_inside]: Open the box and show me the inside.
+        person: (shows pizza_box_open_greasy.jpg)
+        sorty [verdict]: Green bin, in the middle. Greasy or cheesy pizza boxes go to compost, whole box. Thank you!
+        specialist contamination: {"surface_inspected": "Inside bottom of the open pizza box (cardboard floor)", "surface_visible": "yes", "food_or_grease_present": "yes", "severity": "heavy", "coverage_percent": 60, "liquid_visible": "yes", "evidence": 
+        (2 model calls, 10.8 s thinking)
+
+Sorty: 2 of 2 scenarios passed.
+Estimated API cost: $0.05   tokens: {'calls': 6, 'input': 3692, 'output': 916, 'cache_read': 11930, 'cache_write': 13663}

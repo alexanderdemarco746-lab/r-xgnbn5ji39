@@ -1,0 +1,180 @@
+{
+  "meta": {
+    "when": "2026-11-21 15:02",
+    "model": "claude-sonnet-5-5",
+    "effort": "low",
+    "station": "3bin",
+    "cost_usd": 0.0519,
+    "usage": {
+      "calls": 6,
+      "input": 3692,
+      "output": 916,
+      "cache_read": 11930,
+      "cache_write": 13663
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "pizza_box_greasy",
+      "title": "Pizza box, greasy inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "show",
+          "say": "Open the box and show me the inside.",
+          "action": "open_show_inside"
+        },
+        {
+          "person": "(shows pizza_box_open_greasy.jpg)"
+        },
+        {
+          "sorty": "verdict",
+          "say": "Green bin, in the middle. Greasy or cheesy pizza boxes go to compost, whole box. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 1,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "show",
+          "action": "open_show_inside",
+          "say": "Open the box and show me the inside.",
+          "item_seen": "Pizza box",
+          "then_check": "contamination"
+        },
+        {
+          "event": "frame",
+          "unchanged": false
+        },
+        {
+          "event": "specialist",
+          "check": "contamination",
+          "result": {
+            "surface_inspected": "Inside bottom of the open pizza box (cardboard floor)",
+            "surface_visible": "yes",
+            "food_or_grease_present": "yes",
+            "severity": "heavy",
+            "coverage_percent": 60,
+            "liquid_visible": "yes",
+            "evidence": "A large dark brown soaked-in grease stain with soft edges covers most of the box floor, with cheese/topping crumbs and dark spots scattered across it.",
+            "confidence": "high"
+          }
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Greasy pizza box",
+              "bin": "compost",
+              "prep": "",
+              "dest": ""
+            }
+          ],
+          "reason": "Greasy or cheesy pizza boxes go to compost, whole box.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 10.8,
+      "wall_seconds": 10.8,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "Green bin, in the middle. Greasy or cheesy pizza boxes go to compost, whole box. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "compost",
+        "steps": [
+          {
+            "kind": "bin",
+            "item": "Greasy pizza box",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          }
+        ],
+        "reason": "Greasy or cheesy pizza boxes go to compost, whole box.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "soda_can_liquid",
+      "title": "Soda can, half full",
+      "group": "Must ask",
+      "transcript": [
+        {
+          "sorty": "ask",
+          "say": "Is the can completely empty?"
+        },
+        {
+          "person": "Nope, it's still about half full. I don't want the rest, though."
+        },
+        {
+          "sorty": "verdict",
+          "say": "First, pour out the cola first. Then: blue bin, on your left. Aluminum cans are recyclable once the liquid is poured out. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 0,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "ask",
+          "question": "Is the can completely empty?",
+          "fact": "liquid inside",
+          "item_seen": "Cola can"
+        },
+        {
+          "event": "answer",
+          "text": "Nope, it's still about half full. I don't want the rest, though."
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Cola can",
+              "bin": "recycle",
+              "prep": "Pour out the cola first",
+              "dest": ""
+            }
+          ],
+          "reason": "Aluminum cans are recyclable once the liquid is poured out.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 5.9,
+      "wall_seconds": 7.3,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "First, pour out the cola first. Then: blue bin, on your left. Aluminum cans are recyclable once the liquid is poured out. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "recycle",
+        "steps": [
+          {
+            "kind": "prep",
+            "text": "Pour out the cola first"
+          },
+          {
+            "kind": "bin",
+            "item": "Cola can",
+            "bin": "recycle",
+            "position": "left",
+            "text": "Blue bin, on your left"
+          }
+        ],
+        "reason": "Aluminum cans are recyclable once the liquid is poured out.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    }
+  ],
+  "baseline": null
+}

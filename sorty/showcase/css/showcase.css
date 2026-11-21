@@ -93,6 +93,16 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); over
 .item.card { border-radius: 22px; overflow: hidden; border: 8px solid #fff; background: #fff; filter: drop-shadow(0 16px 22px rgba(0,0,0,.28)); }
 .item.card img { object-fit: cover; }
 
+.item video { display: none; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.item.livecard video { display: block; }
+.item.livecard img { display: none; }
+.item.livecard { border-color: #2F81F7; }
+.item.flash::after { content: ""; position: absolute; inset: 0; background: #fff; animation: cardFlash .4s ease-out forwards; }
+@keyframes cardFlash { from { opacity: .95; } to { opacity: 0; } }
+.press-cue { position: absolute; transform: translate(-50%, -50%); padding: 24px 46px; border-radius: 30px; background: #2F81F7; color: #fff;
+  font-size: 58px; font-weight: 700; white-space: nowrap; animation: cuePulse 1.4s ease-out infinite; }
+.press-cue.wait { background: #2B3A52; color: #C9D6E8; animation: none; font-weight: 600; }
+@keyframes cuePulse { 0% { box-shadow: 0 0 0 0 rgba(47,129,247,.6); } 100% { box-shadow: 0 0 0 46px rgba(47,129,247,0); } }
 .ripple { position: absolute; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; border: 10px solid var(--ripc, #2DA44E);
   pointer-events: none; }
 .ripple.go { animation: ripple .9s ease-out forwards; }
@@ -148,6 +158,16 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); over
   background: #D1242F; color: #fff; padding: 2px 7px; border-radius: 4px; }
 #camBox.has #camImg { display: block; } #camBox.has #camEmpty { display: none; }
 #camEmpty { color: var(--muted); font-size: 13px; }
+body.cam-on #camBox { max-height: 30vh; }
+#side { overflow-y: auto; }
+#panelTrace { min-height: 96px; }
+#camBox.live.has #camImg { position: absolute; right: 8px; bottom: 8px; width: 34%; height: auto; aspect-ratio: 4 / 3; object-fit: cover;
+  border: 2px solid #fff; border-radius: 6px; z-index: 2; display: block; }
+#camSent { position: absolute; right: 12px; bottom: 11px; z-index: 3; font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+  background: rgba(13,17,23,.78); color: #fff; padding: 1px 5px; border-radius: 3px; }
+#camBox:not(.live) #camSent, #camBox:not(.has) #camSent { display: none; }
+.badge.spend { color: #B9D4F5; border-color: #1F4E8C; background: #0F2748; }
+.badge.spend.low { color: #FFB38A; border-color: #7A3B1D; background: #3A1D10; }
 #camBox.scan::after { content: ""; position: absolute; left: 0; right: 0; height: 18%; top: 0;
   background: linear-gradient(to bottom, transparent, rgba(88,166,255,.5), transparent); animation: camscan 1.1s linear infinite; }
 @keyframes camscan { from { top: -18%; } to { top: 100%; } }

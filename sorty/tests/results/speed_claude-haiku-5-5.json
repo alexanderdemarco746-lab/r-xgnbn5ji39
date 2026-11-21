@@ -1,0 +1,184 @@
+{
+  "meta": {
+    "when": "2026-11-21 15:02",
+    "model": "claude-haiku-5-5",
+    "effort": "low",
+    "station": "3bin",
+    "cost_usd": 0.003,
+    "usage": {
+      "calls": 6,
+      "input": 3694,
+      "output": 1571,
+      "cache_read": 11930,
+      "cache_write": 13992
+    },
+    "skipped": []
+  },
+  "sorty": [
+    {
+      "id": "pizza_box_greasy",
+      "title": "Pizza box, greasy inside",
+      "group": "Look again",
+      "transcript": [
+        {
+          "sorty": "show",
+          "say": "Open the box lid, please, and show the inside.",
+          "action": "open_show_inside"
+        },
+        {
+          "person": "(shows pizza_box_open_greasy.jpg)"
+        },
+        {
+          "sorty": "verdict",
+          "say": "First, scrape out loose food first. Then: green bin, in the middle. Greasy or food-soiled paper goes to compost, not recycling. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 1,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "show",
+          "action": "open_show_inside",
+          "say": "Open the box lid, please, and show the inside.",
+          "item_seen": "Pizza box",
+          "then_check": "contamination"
+        },
+        {
+          "event": "frame",
+          "unchanged": false
+        },
+        {
+          "event": "specialist",
+          "check": "contamination",
+          "result": {
+            "surface_inspected": "interior base of the pizza box, full view and zoomed crop",
+            "surface_visible": "yes",
+            "food_or_grease_present": "yes",
+            "severity": "heavy",
+            "coverage_percent": 60,
+            "liquid_visible": "cannot_see",
+            "evidence": "A large dark brown translucent stain with soft edges covers most of the box floor, with crumbs, cheese-like bits and orange toppings sitting on it, indicating soaked-in grease and food.",
+            "confidence": "high"
+          }
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Greasy pizza box",
+              "bin": "compost",
+              "prep": "Scrape out loose food first",
+              "dest": ""
+            }
+          ],
+          "reason": "Greasy or food-soiled paper goes to compost, not recycling.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 9.1,
+      "wall_seconds": 9.2,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "First, scrape out loose food first. Then: green bin, in the middle. Greasy or food-soiled paper goes to compost, not recycling. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "compost",
+        "steps": [
+          {
+            "kind": "prep",
+            "text": "Scrape out loose food first"
+          },
+          {
+            "kind": "bin",
+            "item": "Greasy pizza box",
+            "bin": "compost",
+            "position": "center",
+            "text": "Green bin, in the middle"
+          }
+        ],
+        "reason": "Greasy or food-soiled paper goes to compost, not recycling.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    },
+    {
+      "id": "soda_can_liquid",
+      "title": "Soda can, half full",
+      "group": "Must ask",
+      "transcript": [
+        {
+          "sorty": "ask",
+          "say": "Is this can completely empty?"
+        },
+        {
+          "person": "No, it's not empty. It's still about half full."
+        },
+        {
+          "sorty": "verdict",
+          "say": "First, pour out the drink first, then rinse lightly. Then: blue bin, on your left. Thank you!"
+        }
+      ],
+      "person_turns": 1,
+      "specialist_calls": 0,
+      "model_calls": 2,
+      "events": [
+        {
+          "event": "ask",
+          "question": "Is this can completely empty?",
+          "fact": "liquid inside",
+          "item_seen": "Cola can"
+        },
+        {
+          "event": "answer",
+          "text": "No, it's not empty. It's still about half full."
+        },
+        {
+          "event": "verdict",
+          "items": [
+            {
+              "item": "Cola can",
+              "bin": "recycle",
+              "prep": "Pour out the drink first, then rinse lightly",
+              "dest": ""
+            }
+          ],
+          "reason": "Liquids never go in bins, but an empty aluminum can is recyclable.",
+          "confidence": "high"
+        }
+      ],
+      "think_seconds": 6.1,
+      "wall_seconds": 6.8,
+      "interactive": true,
+      "problems": [],
+      "passed": true,
+      "outcome_ok": true,
+      "hidden_fact": true,
+      "final_say": "First, pour out the drink first, then rinse lightly. Then: blue bin, on your left. Thank you!",
+      "final_type": "verdict",
+      "verdict": {
+        "primary_bin": "recycle",
+        "steps": [
+          {
+            "kind": "prep",
+            "text": "Pour out the drink first, then rinse lightly"
+          },
+          {
+            "kind": "bin",
+            "item": "Cola can",
+            "bin": "recycle",
+            "position": "left",
+            "text": "Blue bin, on your left"
+          }
+        ],
+        "reason": "Liquids never go in bins, but an empty aluminum can is recyclable.",
+        "special_dest": null,
+        "confidence": "high"
+      }
+    }
+  ],
+  "baseline": null
+}
