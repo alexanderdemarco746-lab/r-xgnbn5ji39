@@ -1,0 +1,42 @@
+{
+  "id": "3bin",
+  "name": "Three-stream station: recycle, compost, landfill",
+  "bins": [
+    {"id": "recycle", "position": "left", "color": "#1F6FEB", "icon": "recycle",
+     "label": {"en": "Recycle", "es": "Reciclaje"},
+     "color_name": {"en": "blue", "es": "azul"}},
+    {"id": "compost", "position": "center", "color": "#2DA44E", "icon": "compost",
+     "label": {"en": "Compost", "es": "Composta"},
+     "color_name": {"en": "green", "es": "verde"}},
+    {"id": "landfill", "position": "right", "color": "#24292F", "icon": "landfill",
+     "label": {"en": "Landfill", "es": "Basura"},
+     "color_name": {"en": "black", "es": "negro"}}
+  ],
+  "liquid_disposal": {
+    "en": "a sink or drain nearby",
+    "es": "un lavabo o desagüe cercano"
+  },
+  "special_destinations": {
+    "battery": {"en": "the battery drop-off box", "es": "el buzón de pilas"},
+    "ewaste": {"en": "the e-waste drop-off", "es": "el punto de residuos electrónicos"},
+    "hazardous": {"en": "the hazardous waste drop-off", "es": "el punto de residuos peligrosos"},
+    "sharps": {"en": "a sharps container", "es": "un contenedor de objetos punzantes"},
+    "medication": {"en": "a pharmacy take-back", "es": "la farmacia"},
+    "donate": {"en": "a donation box", "es": "un punto de donación"}
+  },
+  "local_rules": [
+    "RECYCLE (blue, left) takes: empty plastic bottles, jugs and tubs marked 1 (PET/PETE), 2 (HDPE) or 5 (PP), caps on; aluminum and steel cans; clean foil; empty glass bottles and jars; clean dry paper and cardboard (boxes, newspaper, office paper, mail, paper bags, clean pizza boxes); empty milk and juice cartons.",
+    "Recycling must be EMPTY: no liquid and no chunks of food. A thin film or a few drops left behind is fine, nobody needs to wash anything.",
+    "RECYCLE never takes: plastic bags or film, foam, greasy or wet paper, paper cups, utensils, straws, chip bags, anything with food still in it.",
+    "COMPOST (green, center) takes: all food scraps (fruit, vegetables, meat, bones, bread, coffee grounds, tea bags); food-soiled paper (greasy or cheesy pizza boxes, used napkins and paper towels, paper plates, uncoated paper food trays); serviceware clearly marked 'compostable' (BPI, PLA 7); wooden chopsticks, stir sticks and toothpicks; plants and flowers.",
+    "COMPOST never takes: plastic of any kind unless it is marked compostable, foam, glass, metal, liquids, diapers, pet waste.",
+    "LANDFILL (black, right) takes: plastic bags, film and wrappers; chip bags and candy wrappers (shiny metallized film is not foil); foam cups and containers; plastic utensils, straws and stirrers unless marked compostable; paper hot and cold cups together with their lids unless marked compostable; plastics marked 3, 4, 6 or 7 that are not marked compostable; condiment packets; gloves, masks, diapers; broken glass or ceramics; tied bags of mixed trash; mixed-material items that cannot be pulled apart.",
+    "A pizza box: greasy, cheesy or with food stuck to it goes to COMPOST (the whole box is fine). Completely clean goes to RECYCLE. Clean cardboard is also harmless in compost.",
+    "An unmarked clear plastic cup cannot be told apart by eye: marked '1 PETE' it is RECYCLE, marked 'compostable' or 'PLA' it is COMPOST. With no marking visible, it is LANDFILL.",
+    "LIQUIDS never go into any bin. Leftover drink gets poured out first (sink or drain), then the container is sorted by its material. If the person cannot empty it, the container goes to LANDFILL with the cap on.",
+    "Food inside a container: food goes to COMPOST, then the container is sorted by its material (foam to LANDFILL, clean rigid plastic 1/2/5 to RECYCLE).",
+    "SPECIAL, never in any of these bins: batteries of every kind and anything with a battery inside (vapes, phones, earbuds, toys) go to the battery or e-waste drop-off because they start fires; electronics, cables and light bulbs go to e-waste; needles go to a sharps container; medication goes to a pharmacy take-back; paint, chemicals, lighters, propane and any aerosol can that is not completely empty go to the hazardous waste drop-off. A completely empty aerosol can is RECYCLE.",
+    "Things that are not trash (keys, wallets, working devices someone is just holding, clothes or books in good shape) should not be binned: say so, and suggest keeping or donating.",
+    "When the facts cannot be established, choose the answer that does no harm whichever way the truth turns out; if none exists, LANDFILL. A wrong item in recycling or compost spoils the whole load, a recyclable in landfill does not."
+  ]
+}
