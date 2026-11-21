@@ -40,7 +40,7 @@ Agents 1 and 2 start at the same moment. Agents 3 and 4 run only when the orches
 
 ## Try it
 
-1. Put your Anthropic API key in `sorty/.env`:
+1. Put your Anthropic API key in `sorty/.env` (copy `sorty/.env.example` and fill it in):
    ```
    ANTHROPIC_API_KEY=sk-ant-...
    ```
@@ -50,6 +50,14 @@ Agents 1 and 2 start at the same moment. Agents 3 and 4 run only when the orches
    ```
    The first run sets up Python packages by itself.
 3. Open http://localhost:8787 in Chrome or Edge and allow the camera.
+
+Three pages are served:
+
+| Page | Address |
+|---|---|
+| Sorty's own screen (the kiosk) | http://localhost:8787 |
+| The virtual prototype: the bin station, the fast tour, camera mode | http://localhost:8787/showcase/ |
+| The five-slide pitch deck | http://localhost:8787/showcase/deck/ |
 
 Hold something up to the camera. Without a key, Sorty starts in a scripted demo mode so the screen and voice can still be shown.
 

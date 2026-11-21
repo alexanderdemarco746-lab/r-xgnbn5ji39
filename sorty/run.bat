@@ -1,5 +1,5 @@
 @echo off
-rem Start Sorty. First run creates the Python environment and installs the two packages.
+rem Start Sorty. First run creates the Python environment and installs the packages in requirements.txt.
 setlocal
 set "HERE=%~dp0"
 if not exist "%HERE%.venv\Scripts\python.exe" (
