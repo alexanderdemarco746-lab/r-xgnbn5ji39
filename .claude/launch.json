@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sorty",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "sorty\run.bat"],
+      "port": 8787
+    }
+  ]
+}

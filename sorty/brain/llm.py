@@ -65,7 +65,7 @@ class LLM:
     def __init__(self, settings: Settings, client: anthropic.Anthropic | None = None) -> None:
         self.settings = settings
         # Credentials come from the environment (ANTHROPIC_API_KEY, loaded from .env).
-        self.client = client or anthropic.Anthropic(timeout=settings.request_timeout_s, max_retries=2)
+        self.client = client or anthropic.Anthropic(timeout=settings.request_timeout_s, max_retries=settings.api_retries)
         self._fallbacks = settings.use_fallbacks
         self.usage = Usage()
 

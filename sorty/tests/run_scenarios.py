@@ -253,6 +253,7 @@ def main() -> int:
     ap.add_argument("--model", default="")
     ap.add_argument("--effort", default="")
     ap.add_argument("--tag", default="latest", help="name for the result files")
+    ap.add_argument("--verbose", action="store_true", help="print each conversation")
     args = ap.parse_args()
 
     if not has_api_key():
@@ -266,6 +267,8 @@ def main() -> int:
         settings.model = args.model
     if args.effort:
         settings.effort = args.effort
+    settings.api_retries = 6
+    settings.request_timeout_s = 90.0
     station = load_station(settings.station_id)
     expect_key = "expect" if settings.station_id == "3bin" else f"expect_{settings.station_id}"
 
@@ -294,6 +297,10 @@ def main() -> int:
     def play(sc: dict) -> dict:
         try:
             rec = run_one(brain, llm, sc)
+            transient = ("rate limited", "no connection", "API error 5")
+            if rec["final"]["type"] == "error" and any(t in str(rec["final"].get("error", "")) for t in transient):
+                time.sleep(30)                      # transient API trouble: try this scenario once more
+                rec = run_one(brain, llm, sc)
         except Exception as exc:  # one broken scenario must not stop the run
             rec = {"id": sc["id"], "title": sc["title"], "group": sc.get("group", ""), "final": {"type": "error", "say": "", "error": f"{type(exc).__name__}: {exc}"},
                    "transcript": [], "person_turns": 0, "specialist_calls": 0, "model_calls": 0, "events": [], "think_seconds": 0, "wall_seconds": 0}
@@ -304,6 +311,19 @@ def main() -> int:
         rec["hidden_fact"] = expect.get("needs") in ("ask", "view", "info")
         print(f"  {'PASS' if rec['passed'] else 'FAIL'}  {sc['id']:<24} {summarise(rec)[:90]}"
               + ("" if rec["passed"] else f"\n        -> {'; '.join(rec['problems'])}"), flush=True)
+        if args.verbose:
+            out = []
+            for line in rec["transcript"]:
+                if "person" in line:
+                    out.append(f"        person: {line['person']}")
+                else:
+                    action = f" {line['action']}" if "action" in line else ""
+                    out.append(f"        sorty [{line['sorty']}{action}]: {line['say']}")
+            for e in rec["events"]:
+                if e["event"] == "specialist":
+                    out.append(f"        specialist {e['check']}: {json.dumps(e['result'], ensure_ascii=False)[:220]}")
+            out.append(f"        ({rec['model_calls']} model calls, {rec['think_seconds']} s thinking)")
+            print("\n".join(out), flush=True)
         return rec
 
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:

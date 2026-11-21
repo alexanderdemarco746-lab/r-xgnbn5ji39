@@ -47,7 +47,7 @@ SLOPE_ANGLE = atan2(0.26, 0.225)
 HEAD_POS = Vector((0.0, 0.17, 1.47))
 HEAD_TILT = 8.0            # degrees, screen leans down toward the user
 SCREEN_W, SCREEN_H, SCREEN_Y = 0.29, 0.172, 0.031
-PERSON_XY = (-0.12, -0.82)
+PERSON_XY = (-0.05, -0.88)
 BOX_TILT = 36.0
 FONT_BOLD, FONT_SEMI, FONT_SYM = "segoeuib.ttf", "seguisb.ttf", "seguisym.ttf"
 
@@ -979,7 +979,7 @@ def setup_render():
             pass
         gl.inputs["Type"].default_value = "Bloom"
         gl.inputs["Threshold"].default_value = 1.6
-        gl.inputs["Strength"].default_value = 0.22
+        gl.inputs["Strength"].default_value = 0.15
         gl.inputs["Size"].default_value = 0.45
         tree.links.new(rl.outputs["Image"], gl.inputs["Image"])
         tree.links.new(gl.outputs["Image"], out.inputs["Image"])
@@ -1031,7 +1031,7 @@ LENS_WORLD = head.matrix_world @ Vector((0, -0.094, 0.006))
 BOX_CENTER = box_frame.matrix_world @ Vector((0, 0.165, 0.03))
 FX = build_fx(C_FX, LENS_WORLD, BOX_CENTER)
 
-CAM_HERO = add_camera("Cam_Hero", (2.55, -3.55, 1.5), (0.0, -0.3, 0.8), 38, C_CAMS)
+CAM_HERO = add_camera("Cam_Hero", (3.0, -2.95, 1.5), (0.05, -0.45, 0.78), 36, C_CAMS)
 CAM_FRONT = add_camera("Cam_Front", (0.0, -4.7, 1.25), (0.0, 0.0, 0.86), 50, C_CAMS)
 CAM_HEAD = add_camera("Cam_HeadCloseup", (0.4, -0.6, 1.4), (0.0, 0.17, 1.455), 55, C_CAMS)
 CAM_STORY = add_camera("Cam_Storyboard", (1.85, -2.95, 1.55), (-0.04, -0.3, 1.08), 50, C_CAMS)

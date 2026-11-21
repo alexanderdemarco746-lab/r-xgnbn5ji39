@@ -41,6 +41,7 @@ class Settings:
     station_id: str = "3bin"
     port: int = 8787
     request_timeout_s: float = 45.0
+    api_retries: int = 2                # SDK retries on rate limits / network errors
     # Interaction budget: people give a bin about ten seconds of patience.
     max_person_turns: int = 3           # questions + "show me again" combined
     max_specialist_calls: int = 3

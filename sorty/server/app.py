@@ -69,6 +69,26 @@ class App:
             "timeouts": {"answer_s": s.answer_timeout_s, "show_s": s.show_timeout_s, "verdict_hold_s": s.verdict_hold_s},
         }
 
+    def notify(self, turn: dict) -> None:
+        """Tell the bin hardware about a verdict (for example to light the LED of
+        the right bin). Set SORTY_NOTIFY_URL to the controller's address; the
+        verdict is POSTed there as JSON. Never blocks or breaks the kiosk."""
+        import os
+        url = os.environ.get("SORTY_NOTIFY_URL")
+        if not url or turn.get("type") != "verdict":
+            return
+        payload = json.dumps({"primary_bin": turn["verdict"]["primary_bin"], "steps": turn["verdict"]["steps"]}).encode("utf-8")
+
+        def post() -> None:
+            try:
+                import urllib.request
+                req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+                urllib.request.urlopen(req, timeout=2).close()
+            except Exception:
+                pass
+
+        threading.Thread(target=post, daemon=True).start()
+
     def demo_scenarios(self) -> list:
         """Scenarios whose images exist, in the shape the kiosk's demo drawer expects."""
         out = []
@@ -190,9 +210,12 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(400, {"error": "image is required"})
                     return
                 turn = self.app.brain.start(body["image"], str(body.get("lang") or "en"), body.get("demo_scenario") or None)
+                self.app.notify(turn)
                 self._json(200, turn)
             elif len(parts) == 4 and parts[:2] == ["api", "session"] and parts[3] == "reply":
-                self._json(200, self.app.brain.reply(parts[2], body))
+                turn = self.app.brain.reply(parts[2], body)
+                self.app.notify(turn)
+                self._json(200, turn)
             elif len(parts) == 4 and parts[:2] == ["api", "session"] and parts[3] == "end":
                 self.app.brain.end(parts[2])
                 self._json(200, {})
