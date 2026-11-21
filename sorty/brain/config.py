@@ -20,8 +20,10 @@ def load_dotenv(path: Path | None = None) -> None:
     path = path or ROOT / ".env"
     if not path.exists():
         return
-    for raw in path.read_text(encoding="utf-8").splitlines():
+    for raw in path.read_text(encoding="utf-8-sig", errors="replace").splitlines():
         line = raw.strip()
+        if line.lower().startswith("export "):
+            line = line[7:].strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)

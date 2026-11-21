@@ -717,6 +717,12 @@
     }
   });
 
+  /* Practice mode ends by itself: once a key is saved in sorty/.env the server goes live, and so does this page. */
+  setInterval(function () {
+    if (!S.cfg || S.cfg.mode === 'live' || (S.run && !S.run.over)) return;
+    getJSON('/api/config').then(function (c) { if (c.mode === 'live') window.location.reload(); }).catch(function () {});
+  }, 4000);
+
   window.SortyShowcase = { state: function () { return { ready: S.kioskReady, run: S.run && { id: S.run.id, kind: S.run.kind, turns: S.run.turns, over: S.run.over }, base: S.base, poses: S.hasPoses, lit: S.litOk, items: Object.keys(S.items).length, scenarios: S.scenarios.length }; }, start: startRun, cancel: cancelRun };
 
   init();
