@@ -210,9 +210,9 @@ body[data-state="ask"] #camActions, body[data-state="looking"] #camActions { dis
 .pg-fill { fill: #fff; } .pg-fill2 { fill: var(--accent-soft); } .pg-acc { stroke: var(--accent); } .pg-dot { fill: var(--ink); stroke: none; }
 .pg-glass { fill: rgba(255, 255, 255, .45); }
 .pg-lid { transform-origin: 46px 114px; animation: pg-lid 2.8s ease-in-out infinite; }
-@keyframes pg-lid { 0%, 12% { transform: rotate(0); } 45%, 86% { transform: rotate(-48deg); } 100% { transform: rotate(0); } }
+@keyframes pg-lid { 0%, 12% { transform: rotate(0); } 45%, 88% { transform: rotate(-48deg); } 100% { transform: rotate(0); } }
 .pg-peek { animation: pg-peek 2.8s ease-in-out infinite; }
-@keyframes pg-peek { 0%, 40% { opacity: 0; transform: translateY(10px); } 56%, 86% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes pg-peek { 0%, 44% { opacity: 0; transform: translateY(10px); } 58%, 78% { opacity: 1; transform: none; } 86%, 100% { opacity: 0; transform: none; } }
 .pg-flip { transform-box: fill-box; transform-origin: center; animation: pg-flip 2.6s ease-in-out infinite; }
 @keyframes pg-flip { 0%, 15% { transform: scaleX(1); } 35% { transform: scaleX(.03); } 55%, 100% { transform: scaleX(1); } }
 .pg-front { animation: pg-front 2.6s linear infinite; } .pg-back { animation: pg-back 2.6s linear infinite; }

@@ -1,0 +1,177 @@
+{
+  "pizza_box_closed": {
+    "file": "pizza_box_closed.png",
+    "w": 655,
+    "h": 388,
+    "height_m": 0.286,
+    "label": "Pizza box"
+  },
+  "pizza_box_open_greasy": {
+    "file": "pizza_box_open_greasy.png",
+    "w": 525,
+    "h": 654,
+    "height_m": 0.6228,
+    "label": "Greasy pizza box"
+  },
+  "pizza_box_open_clean": {
+    "file": "pizza_box_open_clean.png",
+    "w": 525,
+    "h": 654,
+    "height_m": 0.6228,
+    "label": "Clean pizza box"
+  },
+  "pizza_box_open_leftovers": {
+    "file": "pizza_box_open_leftovers.png",
+    "w": 525,
+    "h": 654,
+    "height_m": 0.6228,
+    "label": "Pizza box with leftovers"
+  },
+  "soda_can": {
+    "file": "soda_can.png",
+    "w": 364,
+    "h": 654,
+    "height_m": 0.1353,
+    "label": "Soda can"
+  },
+  "clear_bottle_empty": {
+    "file": "clear_bottle_empty.png",
+    "w": 214,
+    "h": 654,
+    "height_m": 0.2225,
+    "label": "Empty water bottle"
+  },
+  "clear_bottle_half_cola": {
+    "file": "clear_bottle_half_cola.png",
+    "w": 214,
+    "h": 655,
+    "height_m": 0.2235,
+    "label": "Half-full cola bottle"
+  },
+  "banana_peel": {
+    "file": "banana_peel.png",
+    "w": 655,
+    "h": 519,
+    "height_m": 0.1585,
+    "label": "Banana peel"
+  },
+  "battery_aa": {
+    "file": "battery_aa.png",
+    "w": 654,
+    "h": 492,
+    "height_m": 0.0519,
+    "label": "AA batteries"
+  },
+  "coffee_cup_lid": {
+    "file": "coffee_cup_lid.png",
+    "w": 534,
+    "h": 654,
+    "height_m": 0.1384,
+    "label": "Coffee cup"
+  },
+  "cold_cup_side": {
+    "file": "cold_cup_side.png",
+    "w": 485,
+    "h": 654,
+    "height_m": 0.1461,
+    "label": "Clear plastic cup"
+  },
+  "cold_cup_bottom_compostable": {
+    "file": "cold_cup_bottom_compostable.png",
+    "w": 514,
+    "h": 654,
+    "height_m": 0.118,
+    "label": "Compostable cup (bottom)"
+  },
+  "cold_cup_bottom_pet": {
+    "file": "cold_cup_bottom_pet.png",
+    "w": 514,
+    "h": 654,
+    "height_m": 0.118,
+    "label": "Plastic cup (bottom, #1 PETE)"
+  },
+  "clamshell_closed": {
+    "file": "clamshell_closed.png",
+    "w": 654,
+    "h": 374,
+    "height_m": 0.1695,
+    "label": "Foam takeout box"
+  },
+  "clamshell_open_food": {
+    "file": "clamshell_open_food.png",
+    "w": 544,
+    "h": 658,
+    "height_m": 0.3995,
+    "label": "Takeout box with food"
+  },
+  "chip_bag": {
+    "file": "chip_bag.png",
+    "w": 656,
+    "h": 513,
+    "height_m": 0.2009,
+    "label": "Chip bag"
+  },
+  "greasy_napkin": {
+    "file": "greasy_napkin.png",
+    "w": 658,
+    "h": 310,
+    "height_m": 0.1358,
+    "label": "Greasy napkins"
+  },
+  "opaque_bottle": {
+    "file": "opaque_bottle.png",
+    "w": 248,
+    "h": 654,
+    "height_m": 0.201,
+    "label": "Shampoo bottle"
+  },
+  "tied_bag": {
+    "file": "tied_bag.png",
+    "w": 535,
+    "h": 654,
+    "height_m": 0.2655,
+    "label": "Tied plastic bag"
+  },
+  "cardboard_box_clean": {
+    "file": "cardboard_box_clean.png",
+    "w": 654,
+    "h": 432,
+    "height_m": 0.3182,
+    "label": "Cardboard box"
+  },
+  "plastic_fork": {
+    "file": "plastic_fork.png",
+    "w": 654,
+    "h": 234,
+    "height_m": 0.0737,
+    "label": "Plastic fork and knife"
+  },
+  "glass_bottle_empty": {
+    "file": "glass_bottle_empty.png",
+    "w": 176,
+    "h": 654,
+    "height_m": 0.2529,
+    "label": "Glass bottle"
+  },
+  "spray_can": {
+    "file": "spray_can.png",
+    "w": 232,
+    "h": 654,
+    "height_m": 0.211,
+    "label": "Spray paint can"
+  },
+  "two_items_peel_bottle": {
+    "file": "two_items_peel_bottle.png",
+    "w": 644,
+    "h": 654,
+    "height_m": 0.313,
+    "label": "Banana peel and bottle"
+  },
+  "smartphone": {
+    "file": "smartphone.png",
+    "w": 654,
+    "h": 649,
+    "height_m": 0.108,
+    "label": "Smartphone"
+  }
+}

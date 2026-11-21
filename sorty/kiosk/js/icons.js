@@ -65,8 +65,8 @@
     open_show_inside: pg(
       '<path class="pg-fill" d="M52 114h136v58a10 10 0 0 1-10 10H62a10 10 0 0 1-10-10z"/>' +
       '<g class="pg-lid"><rect class="pg-fill2" x="46" y="96" width="148" height="18" rx="7"/></g>' +
-      '<g class="pg-peek"><path class="pg-acc" d="M90 60s11-18 30-18 30 18 30 18-11 18-30 18-30-18-30-18z"/>' +
-      '<circle class="pg-dot" cx="120" cy="60" r="8"/></g>'),
+      '<g class="pg-peek"><path class="pg-acc" d="M90 70s11-18 30-18 30 18 30 18-11 18-30 18-30-18-30-18z"/>' +
+      '<circle class="pg-dot" cx="120" cy="70" r="8"/></g>'),
     flip_over: pg(
       '<g class="pg-flip"><rect class="pg-fill" x="72" y="58" width="96" height="118" rx="14"/>' +
       '<path class="pg-front" d="M94 96h52M94 116h52M94 136h32"/>' +

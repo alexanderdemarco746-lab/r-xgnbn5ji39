@@ -1225,11 +1225,11 @@ if "turntable" in VIEWS:
     os.makedirs(tdir, exist_ok=True)
     cam_t = add_camera("Cam_Turntable", (3.0, -2.95, 1.5), (0.05, -0.45, 0.8), 36, C_CAMS)
     center, radius = Vector((0.05, -0.45, 0.8)), 4.15
-    n = 12 if PREVIEW else 72
+    n = 12 if PREVIEW else 43
     old_samples, old_thr = scene.cycles.samples, scene.cycles.adaptive_threshold
     scene.cycles.samples, scene.cycles.adaptive_threshold = min(old_samples, 64), 0.05
     for i in range(n):
-        az = radians(26 + 40 * i / (n - 1))              # gentle arc around the hero angle (the head stays visible)
+        az = radians(26 + 23.7 * i / (n - 1))            # gentle arc around the hero angle (the head stays visible)
         cam_t.location = (center.x + radius * sin(az), center.y - radius * cos(az), 1.5)
         cam_t.rotation_euler = (center - cam_t.location).to_track_quat("-Z", "Y").to_euler()
         render(cam_t, 1280, 720, "parts/turntable/f_%03d.png" % i)
@@ -1238,16 +1238,22 @@ if "turntable" in VIEWS:
     if ff:
         outp = os.path.join(OUT, "07_turntable.mp4")
         cmd = [ff, "-y", "-loglevel", "error", "-framerate", "24", "-i", os.path.join(tdir, "f_%03d.png"),
-               "-filter_complex", "[0:v]split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1[out]", "-map", "[out]",
+               "-filter_complex", "[0:v]split=4[a][b][c][d];[b]reverse[rb];[d]reverse[rd];[a][rb][c][rd]concat=n=4:v=1[out]",
+               "-map", "[out]",
                "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "19", outp]
         r = subprocess.run(cmd, capture_output=True, text=True)
         print("SORTY: wrote " + outp if r.returncode == 0 else "SORTY: ffmpeg failed: " + r.stderr[:600])
+        if r.returncode == 0:
+            shutil.rmtree(tdir, ignore_errors=True)       # the frames are only an intermediate
 
 # leave the file in the hero / verdict state
 set_state("VERDICT", "compost", True, 120, True, retrofit=False)
 scene.camera = CAM_HERO
 scene.render.resolution_x, scene.render.resolution_y = 1920, 1080
 scene.render.filepath = "//renders/01_hero.png"
+for f in list(bpy.data.fonts):                # all text is mesh now; drop the references to the local font files
+    if f.users == 0:
+        bpy.data.fonts.remove(f)
 if SAVE and not PREVIEW:
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(HERE, "sorty_station.blend"))
     print("SORTY: saved", os.path.join(HERE, "sorty_station.blend"))

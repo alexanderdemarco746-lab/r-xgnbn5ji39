@@ -232,7 +232,7 @@
     // Re-arm the automatic trigger after a pause, starting from the scene as it is then,
     // so an item that is still being held does not start a second conversation.
     st.armed = false;
-    later('arm', function () { cam.snapshotLast(); st.armed = true; }, opts.cooldown != null ? opts.cooldown : 2500);
+    later('arm', function () { cam.snapshotLast(); cam.setLearning(true); st.armed = true; }, opts.cooldown != null ? opts.cooldown : 2500);
     if (st.tour) later('tour', nextTour, 1100);
     renderCounter();
   }
@@ -295,6 +295,7 @@
 
   function beginSession(b64, demoId) {
     var tk = enter('looking');
+    cam.setLearning(false);
     st.sessionLang = st.lang;
     st.lastFrame = b64; st.sessionId = null; st.turn = null; st.answerLock = false;
     st.trace = []; st.turnLog = [];

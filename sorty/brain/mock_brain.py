@@ -66,7 +66,8 @@ class MockBrain(Brain):
             self._rotation += 1
             title = mock["title"]
         else:
-            title = scenario.get("title", "Item")
+            # Only the part before the comma: "Soda can, half full" must not reveal the hidden fact.
+            title = scenario.get("title", "Item").split(",")[0].strip()
             mock = dict(scenario.get("mock") or {})
             if not mock:
                 extra_views = [k for k in scenario.get("frames", {}) if k != "initial"]

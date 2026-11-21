@@ -31,6 +31,7 @@
   var video = null, stream = null, live = false, timer = null;
   var prev = null, bgEmpty = null, bgLast = null;
   var stillSince = 0, lastBurst = -1e9, startedAt = 0;
+  var learning = true;       // the app turns this off during a conversation, so a person standing still is not learned as "empty"
   var listeners = [];
   var metrics = { motion: 0, presEmpty: 0, presLast: 0, stillMs: 0, sinceBurst: 1e9 };
 
@@ -69,8 +70,9 @@
     var stillMs = now - stillSince;
 
     if (!bgEmpty) {
-      if (now - startedAt > 1500 && stillMs > 1200) bgEmpty = copy(cur);
-    } else if (stillMs > T.LEARN_MS) {
+      // first quiet moment after start-up; in a place that is never quiet, take what we have after 5 s
+      if ((now - startedAt > 1500 && stillMs > 1200) || now - startedAt > 5000) bgEmpty = copy(cur);
+    } else if (learning && stillMs > T.LEARN_MS) {
       var s = 0;
       for (var i = 0; i < N; i++) { bgEmpty[i] += (cur[i] - bgEmpty[i]) * 0.1; s += bgEmpty[i]; }
       bgEmpty.mean = s / N;
@@ -156,6 +158,7 @@
     imageToFrame: imageToFrame,
     onTick: function (fn) { listeners.push(fn); },
     onState: function (fn) { stateListeners.push(fn); },
+    setLearning: function (on) { learning = !!on; },
     metrics: function () { return metrics; },
     /* Remember the scene as it is now; the next trigger needs something different from it. */
     snapshotLast: function () { bgLast = prev ? copy(prev) : null; },

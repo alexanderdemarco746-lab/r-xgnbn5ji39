@@ -324,9 +324,14 @@ class Brain:
         sess.note("show", f'Sees "{item or "something"}". Needs another view ({action}): "{say}"')
         sess.log.append({"event": "show", "action": action, "say": say, "item_seen": item,
                          "then_check": args.get("then_check", "none")})
+        headline = say.rstrip(".")
+        for joiner in (" and ", " y ", ", "):                 # "Open the box and show me inside" -> "Open the box"
+            if len(headline) > 22 and joiner in headline:
+                headline = headline.split(joiner)[0]
+                break
         return self._turn(
             sess, t0, "show", say,
-            {"headline": say.rstrip("."), "sub": str(args.get("because", "")).strip(),
+            {"headline": headline, "sub": str(args.get("because", "")).strip(),
              "item_label": item, "icon": phrases.ACTION_ICONS.get(action, "eye")},
             show={"action": action, "hint": say.rstrip(".")},
         )

@@ -25,6 +25,7 @@ from brain.mock_brain import MockBrain  # noqa: E402
 from brain.persona import simulated_answer  # noqa: E402
 
 KIOSK_DIR = ROOT / "kiosk"
+SHOWCASE_DIR = ROOT / "showcase"
 IMAGES_DIR = ROOT / "tests" / "images"
 SCENARIOS_FILE = ROOT / "tests" / "scenarios.json"
 MAX_BODY = 12 * 1024 * 1024
@@ -191,6 +192,13 @@ class Handler(BaseHTTPRequestHandler):
             self._json(404, {"error": "not found"})
         elif path.startswith("/demo-images/"):
             self._static(IMAGES_DIR, path[len("/demo-images/"):])
+        elif path == "/showcase":
+            self.send_response(302)
+            self.send_header("Location", "/showcase/")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+        elif path.startswith("/showcase/"):
+            self._static(SHOWCASE_DIR, path[len("/showcase/"):])
         else:
             self._static(KIOSK_DIR, path)
 
@@ -243,6 +251,7 @@ def main() -> None:
     host, port = server.server_address
     brain = f"live, {app.settings.model}" if app.mode == "live" else "scripted demo (no API key found in .env)"
     print(f"Sorty is running at http://localhost:{port}   brain: {brain}   station: {app.station['id']}", flush=True)
+    print(f"Virtual prototype (showcase): http://localhost:{port}/showcase/", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

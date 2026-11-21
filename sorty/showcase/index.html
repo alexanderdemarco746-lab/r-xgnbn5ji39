@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorty: virtual prototype</title>
+<link rel="stylesheet" href="css/showcase.css">
+</head>
+<body>
+<div id="app">
+
+  <header id="top">
+    <div class="brand">
+      <span class="dot"></span>
+      <strong>Sorty</strong>
+      <span class="sub">virtual prototype</span>
+      <span id="modeBadge" class="badge" hidden></span>
+    </div>
+    <div class="controls">
+      <label class="toggle" title="A simulated person answers Sorty's questions">
+        <input type="checkbox" id="optAuto" checked>
+        <span>Auto-answer</span>
+      </label>
+      <button id="btnTour" class="btn" type="button">Play tour</button>
+      <button id="btnCam" class="btn" type="button" title="Hold a real object up to your webcam">Use my camera</button>
+      <button id="btnSound" class="btn ghost" type="button" aria-pressed="true">Sound on</button>
+      <a class="btn ghost" href="/" target="_blank" rel="noopener" title="Open the bin's screen software on its own">Open the real screen</a>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <section id="stageCol">
+      <div id="viewport" aria-label="Animated view of the Sorty station">
+        <div id="world">
+          <img id="plateIdle" class="plate" alt="">
+          <img id="plateRecycle" class="plate lit" data-bin="recycle" alt="">
+          <img id="plateCompost" class="plate lit" data-bin="compost" alt="">
+          <img id="plateLandfill" class="plate lit" data-bin="landfill" alt="">
+          <div id="glow" class="glow" hidden></div>
+
+          <div id="mini" class="mini" data-state="idle">
+            <div class="mini-idle"><i></i><i></i></div>
+            <div class="mini-scan"></div>
+            <div class="mini-ask">?</div>
+            <div class="mini-show"></div>
+            <div class="mini-verdict"><b id="miniWord"></b><span id="miniArrow"></span></div>
+            <div class="mini-alert">!</div>
+          </div>
+
+          <div id="person" class="person off">
+            <img id="poseWalk" class="pose" alt="">
+            <img id="poseIdle" class="pose" alt="">
+            <img id="posePresent" class="pose" alt="">
+            <div id="personDev" class="person-dev" hidden><i class="h"></i><i class="b"></i><i class="a"></i></div>
+          </div>
+
+          <svg id="fx" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="beamGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#8CC8FF" stop-opacity=".55"/>
+                <stop offset="1" stop-color="#8CC8FF" stop-opacity=".06"/>
+              </linearGradient>
+            </defs>
+            <polygon id="beam" fill="url(#beamGrad)" opacity="0"/>
+            <g id="brackets" opacity="0" fill="none" stroke="#9BD1FF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></g>
+          </svg>
+
+          <div id="item" class="item" hidden><img id="itemImg" alt=""></div>
+          <div id="item2" class="item" hidden><img id="item2Img" alt=""></div>
+          <div id="ripple" class="ripple" hidden></div>
+
+          <div id="saySorty" class="say sorty" hidden></div>
+          <div id="sayPerson" class="say person" hidden></div>
+        </div>
+        <div id="curtain">Loading the station…</div>
+      </div>
+
+      <div id="why">
+        <span id="whyTag" class="tag">Ready</span>
+        <span id="whyText">Pick an item below. A person walks up, shows it to Sorty's camera, and Sorty tells them which bin to use.</span>
+      </div>
+
+      <div id="answerBar" hidden>
+        <span class="lbl">You are the person. Answer:</span>
+        <div id="answerBtns"></div>
+      </div>
+    </section>
+
+    <aside id="side">
+      <div class="panel" id="panelScreen">
+        <h2>Sorty's screen <small>the real software, running live</small></h2>
+        <div id="kioskWrap"><iframe id="kiosk" title="Sorty kiosk screen" allow="camera; microphone; autoplay"></iframe></div>
+      </div>
+      <div class="panel" id="panelCam">
+        <h2>What the camera sees <small id="camNote">the frame sent to the AI</small></h2>
+        <div id="camBox"><img id="camImg" alt=""><span id="camEmpty">Nothing shown yet</span></div>
+      </div>
+      <div class="panel" id="panelTrace">
+        <h2>How Sorty decided <small id="traceTime"></small></h2>
+        <ol id="trace"><li class="empty">Steps appear here as Sorty works.</li></ol>
+      </div>
+    </aside>
+
+  </main>
+
+  <footer id="tray" aria-label="Items to try">
+    <div id="trayList"></div>
+  </footer>
+
+</div>
+<script src="js/showcase.js"></script>
+</body>
+</html>
