@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "sorty",
-      "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "sorty\run.bat"],
+      "runtimeExecutable": "sorty/.venv/Scripts/python.exe",
+      "runtimeArgs": ["sorty/server/app.py"],
       "port": 8787
     }
   ]

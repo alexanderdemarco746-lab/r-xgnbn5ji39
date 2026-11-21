@@ -41,6 +41,8 @@ LABELS = {
     'two_items_peel_bottle': 'Banana peel and bottle', 'smartphone': 'Smartphone',
 }
 ORDER = list(LABELS)
+FLOORS = {'cold_cup_bottom_compostable': 0.62, 'cold_cup_bottom_pet': 0.62}   # keep the base markings legible over dark things
+LOWKEY = {'plastic_fork', 'clamshell_closed', 'clamshell_open_food', 'greasy_napkin', 'tied_bag', 'coffee_cup_lid', 'opaque_bottle'}
 CLEAR = {'clear_bottle_empty', 'clear_bottle_half_cola', 'cold_cup_side', 'cold_cup_bottom_compostable', 'cold_cup_bottom_pet',
          'glass_bottle_empty', 'two_items_peel_bottle'}
 
@@ -92,12 +94,13 @@ def over(canvas, rgba, x, y):
 
 
 # ----------------------------------------------------------------- studio & camera
-def studio(scene, clear):
+def studio(scene, clear, lowkey=False):
+    k = 0.0 if not lowkey else 1.0     # white items: less ambient and top light so they keep form shading on a light page
     world = bpy.data.worlds.new('CutoutWorld')
     world.use_nodes = True
     bg = world.node_tree.nodes['Background']
     bg.inputs[0].default_value = (0.84, 0.88, 0.94, 1)
-    bg.inputs[1].default_value = 0.46
+    bg.inputs[1].default_value = 0.46 - 0.20 * k
     scene.world = world
 
     def area(name, loc, size, power, color=(1, 1, 1), aim=(0, 0, 0.05)):
@@ -112,11 +115,11 @@ def studio(scene, clear):
         L.link(ob)
         ob.visible_camera = False
 
-    area('key', (-0.55, -0.55, 0.95), (0.9, 0.9), 20, (1.0, 0.97, 0.93))
-    area('fill', (0.85, -0.35, 0.50), (0.7, 0.7), 7, (0.92, 0.96, 1.0))
-    area('top', (0.1, 0.25, 1.5), (1.2, 0.6), 26, (1.0, 0.98, 0.95), aim=(0.1, 0.25, 0))
-    area('rim', (0.35, 0.95, 0.75), (0.6, 0.4), 8)
-    area('under', (0.0, -0.3, -0.7), (1.2, 1.2), 9, aim=(0, 0, 0.05))      # stands in for the counter bounce
+    area('key', (-0.55, -0.55, 0.95), (0.9, 0.9), 20 - 3 * k, (1.0, 0.97, 0.93))
+    area('fill', (0.85, -0.35, 0.50), (0.7, 0.7), 7 - 4.5 * k, (0.92, 0.96, 1.0))
+    area('top', (0.1, 0.25, 1.5), (1.2, 0.6), 26 - 17 * k, (1.0, 0.98, 0.95), aim=(0.1, 0.25, 0))
+    area('rim', (0.35, 0.95, 0.75), (0.6, 0.4), 8 - 3 * k)
+    area('under', (0.0, -0.3, -0.7), (1.2, 1.2), 9 - 6.5 * k, aim=(0, 0, 0.05))      # stands in for the counter bounce
     if clear:
         # dark side flags (outside the frame): glass edges pick them up and stay visible on a light page
         dark = L.simple_mat('flag', (0.035, 0.038, 0.045, 1), rough=0.9)
@@ -183,7 +186,7 @@ def render_item(name, samples):
     bpy.context.view_layer.update()
     pts = item_points(objs)
     clear = name in CLEAR
-    studio(scene, clear)
+    studio(scene, clear, lowkey=name in LOWKEY)
     cam = L.add_camera(scene, lens=spec.get('lens', 35.0))
     shot = spec.get('shot', {})
     d = fit_camera(scene, cam, pts, shot.get('elev', 30), shot.get('azim', 20))
@@ -209,7 +212,8 @@ def render_item(name, samples):
             key = np.clip(np.linalg.norm(rgb - ref, axis=2) * GAIN, 0, 1)
         else:
             key = np.zeros_like(aB)
-        see = np.maximum(np.maximum(aA, FLOOR * aB), key * aB)
+        floor = FLOORS.get(name, FLOOR)
+        see = np.maximum(np.maximum(aA, floor * aB), key * aB)
         alpha = np.where(glass, np.minimum(see, aB), aB)
     ys, xs = np.where(alpha > 0.004)
     y0, y1 = max(ys.min() - PAD, 0), min(ys.max() + PAD + 1, RES)

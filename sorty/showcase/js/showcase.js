@@ -164,6 +164,11 @@
   }
 
   var ENTER = 1250;
+  /* Run a Web Animation, but never let the story hang on it: a browser may pause animations in a hidden tab. */
+  function play(el, frames, opts) {
+    var a = el.animate(frames, opts), ms = (typeof opts === 'number' ? opts : opts.duration) || 0;
+    return Promise.race([a.finished.catch(function () {}), sleep(ms + 180)]);
+  }
   function slide(el, base, dx, entering) {
     // a short walk: slide along the floor with a small bob, so a still figure reads as walking
     var frames = [], steps = 6;
@@ -172,7 +177,7 @@
       var o = entering ? Math.min(1, p * 4) : Math.min(1, (1 - p) * 4);
       frames.push({ transform: base + ' translate(' + x + 'px,' + y + 'px)', opacity: o, offset: p });
     }
-    return el.animate(frames, { duration: ENTER, easing: 'ease-in-out', fill: 'both' }).finished.catch(function () {});
+    return play(el, frames, { duration: ENTER, easing: 'ease-in-out', fill: 'both' });
   }
   function walkDistance() { return S.stage.person.feet[0] + 420; }
   function personEnter() {
@@ -213,37 +218,36 @@
   }
   function itemSwap(key, photoUrl) {
     var el = $('item');
-    return el.animate([{ transform: 'translate(-50%,-50%) scaleX(1)' }, { transform: 'translate(-50%,-50%) scaleX(0.04)' }], { duration: 230, easing: 'ease-in' })
-      .finished.then(function () {
+    return play(el, [{ transform: 'translate(-50%,-50%) scaleX(1)' }, { transform: 'translate(-50%,-50%) scaleX(0.04)' }], { duration: 230, easing: 'ease-in' })
+      .then(function () {
         setItem(el, key, photoUrl); aimBeam();
-        return el.animate([{ transform: 'translate(-50%,-50%) scaleX(0.04)' }, { transform: 'translate(-50%,-50%) scaleX(1)' }], { duration: 260, easing: 'ease-out' }).finished;
-      }).catch(function () {});
+        return play(el, [{ transform: 'translate(-50%,-50%) scaleX(0.04)' }, { transform: 'translate(-50%,-50%) scaleX(1)' }], { duration: 260, easing: 'ease-out' });
+      });
   }
   function itemWiggle() {
-    return $('item').animate([{ transform: 'translate(-50%,-50%) rotate(0)' }, { transform: 'translate(-50%,-50%) rotate(-9deg)' },
-      { transform: 'translate(-50%,-50%) rotate(8deg)' }, { transform: 'translate(-50%,-50%) rotate(0)' }], { duration: 700 }).finished.catch(function () {});
+    return play($('item'), [{ transform: 'translate(-50%,-50%) rotate(0)' }, { transform: 'translate(-50%,-50%) rotate(-9deg)' },
+      { transform: 'translate(-50%,-50%) rotate(8deg)' }, { transform: 'translate(-50%,-50%) rotate(0)' }], { duration: 700 });
   }
   function itemPour() {
-    return $('item').animate([{ transform: 'translate(-50%,-50%) rotate(0)' }, { transform: 'translate(-50%,-50%) rotate(115deg)', offset: .3 },
-      { transform: 'translate(-50%,-50%) rotate(115deg)', offset: .75 }, { transform: 'translate(-50%,-50%) rotate(0)' }], { duration: 1500, easing: 'ease-in-out' })
-      .finished.catch(function () {});
+    return play($('item'), [{ transform: 'translate(-50%,-50%) rotate(0)' }, { transform: 'translate(-50%,-50%) rotate(115deg)', offset: .3 },
+      { transform: 'translate(-50%,-50%) rotate(115deg)', offset: .75 }, { transform: 'translate(-50%,-50%) rotate(0)' }], { duration: 1500, easing: 'ease-in-out' });
   }
   function itemDrop(el, binId) {
     var to = S.stage.bins[binId].opening, x0 = parseFloat(el.style.left), y0 = parseFloat(el.style.top);
     var dx = to[0] - x0, dy = to[1] - y0, lift = Math.max(180, Math.abs(dx) * 0.28);
     var base = 'translate(-50%,-50%) ';
     var end = Math.max(0.16, Math.min(0.5, 150 / Math.max(el._w || 200, el._h || 200)));
-    return el.animate([
+    return play(el, [
       { transform: base + 'translate(0,0) scale(1) rotate(0)', opacity: 1, easing: 'cubic-bezier(.2,.7,.5,1)' },
       { transform: base + 'translate(' + dx * 0.5 + 'px,' + (Math.min(0, dy) * 0.5 - lift) + 'px) scale(.8) rotate(24deg)', opacity: 1, offset: .5, easing: 'cubic-bezier(.5,0,.8,.4)' },
       { transform: base + 'translate(' + dx + 'px,' + dy + 'px) scale(' + end + ') rotate(52deg)', opacity: 1, offset: .93 },
       { transform: base + 'translate(' + dx + 'px,' + (dy + 26) + 'px) scale(' + end * 0.7 + ') rotate(60deg)', opacity: 0 }
-    ], { duration: 950, fill: 'forwards' }).finished.then(function () {
+    ], { duration: 950, fill: 'forwards' }).then(function () {
       el.hidden = true; clearAnim(el);
       var r = $('ripple'), color = S.bins[binId].color === '#24292F' ? '#C9D4E3' : S.bins[binId].color;
       r.style.left = to[0] + 'px'; r.style.top = to[1] + 'px'; r.style.setProperty('--ripc', color);
       r.hidden = false; r.classList.remove('go'); void r.offsetWidth; r.classList.add('go');
-    }).catch(function () {});
+    });
   }
 
   /* The camera's view cone: from the lens to the item, with corner brackets around what it is reading. */
@@ -273,9 +277,16 @@
     el.innerHTML = '';
     var tag = document.createElement('span'); tag.className = 'who'; tag.textContent = who === 'sorty' ? 'Sorty' : 'Person';
     el.appendChild(tag); el.appendChild(document.createTextNode(text));
-    el.hidden = false;
+    el.hidden = false; el.classList.remove('beside');
     var half = el.offsetWidth / 2, x = Math.max(half + 24, Math.min(S.W - half - 24, at[0]));
-    var y = Math.max(el.offsetHeight + 24, at[1] - 34);
+    var y = at[1] - 34;
+    if (y - el.offsetHeight < 20) {                    // no room above: sit to the right of it, level with it
+      el.classList.add('beside');
+      var q = who === 'sorty' && S.stage.screen && S.stage.screen.quad;
+      var right = q ? Math.max(q[1][0], q[2][0]) : at[0] + 120, mid = q ? (q[0][1] + q[3][1]) / 2 : at[1] + 120;
+      x = Math.min(S.W - half - 24, right + 70 + half);
+      y = Math.max(el.offsetHeight + 20, mid + el.offsetHeight / 2);
+    }
     el.style.left = x + 'px'; el.style.top = y + 'px';
     if (ms) sayTimers[who] = setTimeout(function () { el.hidden = true; }, ms);
   }

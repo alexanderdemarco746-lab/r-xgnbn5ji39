@@ -7,7 +7,8 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body { background: var(--bg); color: var(--text); font-family: var(--font); overflow: hidden; }
-#app { height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; padding: 10px 14px 12px; }
+#app { height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; padding: 10px 14px 12px; }
+#top, #main, #tray { min-width: 0; }
 
 /* ---------- top bar ---------- */
 #top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -41,7 +42,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); over
 .plate.lit { opacity: 0; transition: opacity .55s ease; }
 .plate.lit.on { opacity: 1; }
 .glow { position: absolute; width: 900px; height: 900px; margin: -450px 0 0 -450px; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(closest-side, var(--glow, #2DA44E) 0%, transparent 70%); opacity: .55; mix-blend-mode: screen; }
+  background: radial-gradient(closest-side, var(--glow, #2DA44E) 0%, transparent 70%); opacity: .5; }
 .glow.alert { --glow: #F5A524; }
 
 /* the screen on the station, drawn live and warped onto the display */
@@ -105,6 +106,8 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); over
 .say::after { content: ""; position: absolute; left: 50%; bottom: -26px; margin-left: -22px; border: 22px solid transparent; border-bottom: 0; }
 .say.sorty::after { border-top-color: #10151C; }
 .say.person::after { border-top-color: #fff; }
+.say.beside::after { left: -20px; bottom: 50%; margin: 0 0 -22px 0; border: 22px solid transparent; border-left: 0; border-right-color: #10151C; border-top-color: transparent; }
+.say.person.beside::after { border-right-color: #fff; border-top-color: transparent; }
 .say .who { display: block; font-size: 30px; font-weight: 600; opacity: .7; margin-bottom: 6px; letter-spacing: .5px; }
 
 /* ---------- explanation strip and answers ---------- */

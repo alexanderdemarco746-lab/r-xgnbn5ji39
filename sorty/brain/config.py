@@ -71,7 +71,7 @@ def get_settings() -> Settings:
     s.speed = env("SORTY_SPEED", s.speed)
     s.use_fallbacks = env("SORTY_FALLBACKS", "1") not in ("0", "false", "no")
     s.station_id = env("SORTY_STATION", s.station_id)
-    s.port = int(env("SORTY_PORT", str(s.port)))
+    s.port = int(env("SORTY_PORT") or env("PORT") or s.port)    # PORT: set by hosting and preview tools
     s.max_person_turns = int(env("SORTY_MAX_PERSON_TURNS", str(s.max_person_turns)))
     s.save_frames = env("SORTY_SAVE_FRAMES", "0") in ("1", "true", "yes")
     return s

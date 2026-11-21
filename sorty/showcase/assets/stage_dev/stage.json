@@ -1,0 +1,92 @@
+{
+ "size": [
+  2560,
+  1440
+ ],
+ "_note": "development stand-in built from the front render; replaced by assets/stage/",
+ "screen": {
+  "quad": [
+   [
+    1196,
+    183
+   ],
+   [
+    1365,
+    183
+   ],
+   [
+    1365,
+    280
+   ],
+   [
+    1196,
+    280
+   ]
+  ]
+ },
+ "lens": [
+  1280,
+  304
+ ],
+ "head": [
+  1280,
+  163
+ ],
+ "bins": {
+  "recycle": {
+   "opening": [
+    980,
+    608
+   ],
+   "opening_rx": 53,
+   "opening_ry": 48,
+   "front": [
+    980,
+    867
+   ]
+  },
+  "compost": {
+   "opening": [
+    1280,
+    609
+   ],
+   "opening_rx": 96,
+   "opening_ry": 27,
+   "front": [
+    1280,
+    867
+   ]
+  },
+  "landfill": {
+   "opening": [
+    1580,
+    609
+   ],
+   "opening_rx": 60,
+   "opening_ry": 49,
+   "front": [
+    1580,
+    867
+   ]
+  }
+ },
+ "person": {
+  "feet": [
+   560,
+   1347
+  ],
+  "head_top": [
+   560,
+   421
+  ],
+  "hands": [
+   747,
+   693
+  ],
+  "px_per_m_at_hands": 640
+ },
+ "zone": [
+  1280,
+  1267
+ ]
+}
