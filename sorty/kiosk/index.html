@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>Sorty - which bin?</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2311161C'/%3E%3Cellipse cx='22' cy='32' rx='9' ry='12' fill='%23fff'/%3E%3Cellipse cx='42' cy='32' rx='9' ry='12' fill='%23fff'/%3E%3Ccircle cx='24' cy='33' r='4' fill='%2311161C'/%3E%3Ccircle cx='44' cy='33' r='4' fill='%2311161C'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-state="boot">
+
+<div id="app">
+  <header id="topbar">
+    <div class="brand">
+      <span class="mini-eyes" aria-hidden="true"><i></i><i></i></span>
+      <span id="brandName">Sorty</span>
+      <span id="modeBadge" class="badge" hidden></span>
+    </div>
+    <div id="counter" class="counter" hidden></div>
+    <div class="controls">
+      <div class="seg" id="langSeg" role="group"></div>
+      <button class="ctl" id="btnMute" type="button"></button>
+      <button class="ctl" id="btnDemo" type="button"></button>
+      <button class="ctl" id="btnTrace" type="button"></button>
+      <button class="ctl" id="btnFull" type="button"></button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <section id="panelMsg">
+      <div id="face" data-show="boot idle looking" aria-hidden="true">
+        <svg viewBox="0 0 240 136" class="face-svg" focusable="false">
+          <g class="eye"><ellipse class="sclera" cx="70" cy="60" rx="44" ry="50"/>
+            <g class="pupil"><circle cx="70" cy="62" r="19"/><circle class="glint" cx="77" cy="54" r="6"/></g></g>
+          <g class="eye"><ellipse class="sclera" cx="170" cy="60" rx="44" ry="50"/>
+            <g class="pupil"><circle cx="170" cy="62" r="19"/><circle class="glint" cx="177" cy="54" r="6"/></g></g>
+          <path class="smile" d="M100 121 Q120 133 140 121"/>
+        </svg>
+      </div>
+      <div id="errIcon" data-show="error" aria-hidden="true"></div>
+      <div id="pictogram" data-show="show" aria-hidden="true"></div>
+      <div id="itemChip" class="chip light" data-show="ask show" hidden></div>
+      <h1 id="headline" data-show="boot idle looking ask show error"></h1>
+      <p id="sub" data-show="boot idle looking ask show error"></p>
+      <div id="answers" data-show="ask"></div>
+      <div id="answerTimer" data-show="ask" aria-hidden="true"><i></i></div>
+      <div id="listen" data-show="ask"><span class="mic" aria-hidden="true"></span><span id="listenText"></span></div>
+      <div id="bubble" hidden></div>
+    </section>
+
+    <section id="panelCam" data-show="boot idle looking ask show">
+      <div id="camFrame" data-mode="off">
+        <video id="video" playsinline muted autoplay></video>
+        <canvas id="still"></canvas>
+        <div id="camOff"><span class="camoff-ico" aria-hidden="true"></span><span id="camOffText"></span></div>
+        <div class="scan" aria-hidden="true"></div>
+        <div class="flash" aria-hidden="true"></div>
+        <div class="brackets" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div id="camTag" class="tag"></div>
+        <div id="onAir" class="tag air" hidden><i></i><span id="onAirText"></span></div>
+        <div id="demoBadge" class="tag demo" hidden></div>
+        <div id="demoNote" class="tag note" hidden></div>
+        <svg id="stillRing" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="bg" cx="22" cy="22" r="18"/><circle class="fg" cx="22" cy="22" r="18"/>
+        </svg>
+      </div>
+      <div id="camActions">
+        <button id="btnScan" class="big" type="button" data-show="boot idle"></button>
+        <button id="btnDone" class="big" type="button" data-show="show"></button>
+        <span id="camHint"></span>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Verdict: fills the screen with the bin's colour; the bin strip stays on top of it. -->
+<section id="verdict" data-show="verdict" hidden>
+  <div class="v-top">
+    <div class="v-chips"><span id="vChip" class="chip"></span><span id="vGuess" class="chip ghost" hidden></span></div>
+    <div class="v-progress" aria-hidden="true"><i id="vBar"></i></div>
+  </div>
+  <div class="v-body" id="vBody"></div>
+</section>
+
+<section id="thanks" data-show="thanks" hidden>
+  <svg viewBox="0 0 240 136" class="face-svg happy-face" aria-hidden="true" focusable="false">
+    <path class="happy" d="M30 78 Q70 26 110 78"/><path class="happy" d="M130 78 Q170 26 210 78"/>
+    <path class="smile" d="M92 112 Q120 136 148 112"/>
+  </svg>
+  <h2 id="thanksHead"></h2>
+  <p id="thanksSub"></p>
+</section>
+
+<footer id="binStrip"></footer>
+
+<div id="caption" hidden><span class="cap-ico" aria-hidden="true"></span><span id="captionText"></span></div>
+<button id="soundHint" type="button" hidden></button>
+
+<div id="backdrop" hidden></div>
+
+<aside id="demoDrawer" class="drawer left" aria-hidden="true">
+  <div class="drawer-head">
+    <div><h2 id="demoTitle"></h2><p id="demoSub"></p></div>
+    <button class="ctl" id="demoClose" type="button"></button>
+  </div>
+  <div class="drawer-tools">
+    <label class="switch"><input type="checkbox" id="autoPlay"><span class="track" aria-hidden="true"></span>
+      <span><b id="autoPlayLabel"></b><small id="autoPlaySub"></small></span></label>
+    <button id="playAll" class="pill" type="button"></button>
+  </div>
+  <div id="demoList" class="drawer-body"></div>
+  <p class="drawer-foot" id="demoFoot"></p>
+</aside>
+
+<aside id="tracePanel" class="drawer right" aria-hidden="true">
+  <div class="drawer-head">
+    <div><h2 id="traceTitle"></h2><p id="traceMeta"></p></div>
+    <button class="ctl" id="traceClose" type="button"></button>
+  </div>
+  <div id="traceList" class="drawer-body"></div>
+  <div id="traceTurns" class="trace-turns"></div>
+  <p class="drawer-foot" id="traceCam"></p>
+</aside>
+
+<script src="js/i18n.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/mock.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
