@@ -342,6 +342,20 @@ def test_server():
         app.brain.delay_s = 0
         status, cfg = call("GET", "/api/config")
         check("server: config", status == 200 and cfg["mode"] == "mock" and len(cfg["station"]["bins"]) == 3 and cfg["timeouts"]["answer_s"] > 0)
+        check("server: starts on the standard AI setup and offers two", cfg["profile"]["name"] == "standard"
+              and sorted(o["name"] for o in cfg["profile"]["options"]) == ["fast", "standard"], str(cfg.get("profile")))
+        status, cfg = call("POST", "/api/profile", {"profile": "fast"})
+        check("server: faster setup chosen", status == 200 and cfg["profile"]["name"] == "fast", str(cfg)[:200])
+        check("server: faster setup changes the model and drops the pre-armed check",
+              app.settings.model == "claude-sonnet-5-5" and app.settings.prearm_specialist is False)
+        status, cfg = call("POST", "/api/profile", {"profile": "standard"})
+        check("server: standard setup restored", status == 200 and cfg["profile"]["name"] == "standard"
+              and app.settings.model == "claude-opus-5-5" and app.settings.prearm_specialist is True, str(cfg)[:200])
+        status, err = call("POST", "/api/profile", {"profile": "turbo"})
+        check("server: unknown setup is a 400 and changes nothing", status == 400 and "error" in err
+              and app.profile == "standard" and app.settings.model == "claude-opus-5-5", str(err))
+        status, err = call("POST", "/api/profile", {})
+        check("server: missing setup name is a 400", status == 400 and "error" in err, str(err))
         status, turn = call("POST", "/api/session", {"image": frame(), "lang": "en", "demo_scenario": "soda_can_empty"})
         check("server: start session", status == 200 and turn["type"] == "ask", str(turn)[:200])
         status, turn2 = call("POST", f"/api/session/{turn['session_id']}/reply", {"type": "answer", "text": "no"})

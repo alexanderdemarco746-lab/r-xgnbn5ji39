@@ -60,7 +60,7 @@
 
   function setBadge() {
     var b = $('modeBadge');
-    if (S.cfg.mode === 'live') { b.textContent = 'Live AI: ' + (S.cfg.model || 'Claude'); b.className = 'badge live'; }
+    if (S.cfg.mode === 'live') { b.textContent = 'Live AI: ' + (S.cfg.model || 'Claude') + (S.cfg.profile && S.cfg.profile.name === 'fast' ? ' (faster mode)' : ''); b.className = 'badge live'; }
     else { b.textContent = 'Practice mode: scripted answers, no AI key'; b.className = 'badge practice'; }
     b.hidden = false;
     var m = $('budget'), bud = S.cfg.budget;
@@ -762,9 +762,15 @@
   /* Practice mode ends by itself: once a key is saved in sorty/.env the server goes live, and so does this page. */
   setInterval(function () {
     if (!S.cfg || (S.run && !S.run.over)) return;
+    var fast = $('optFast'), was = fast && fast.checked;
     getJSON('/api/config').then(function (c) {
       if (c.mode !== S.cfg.mode) { window.location.reload(); return; }      // a key was added, or the budget ran out
-      S.cfg.budget = c.budget; setBadge();
+      S.cfg.budget = c.budget;
+      if (!fast || fast.checked === was) {      // not when Faster mode was switched meanwhile: its own answer is the newer one
+        S.cfg.model = c.model; S.cfg.profile = c.profile;
+        if (fast) fast.checked = !!(c.profile && c.profile.name === 'fast');
+      }
+      setBadge();
     }).catch(function () {});
   }, 4000);
 
@@ -845,6 +851,40 @@
     btn.addEventListener('click', function (e) { if (e.detail) btn.blur(); test(); });   // after a mouse click, Space stays free for the sensor
     frame.addEventListener('load', watch);
     watch();
+  })();
+
+  /* ---------------------------------------------------------------- faster mode */
+  /* The server keeps two AI setups, "standard" and "fast", and uses the chosen one from its next AI call. This switch
+     asks the server to change (POST /api/profile) and then shows what it answered. It stands alone: besides its own
+     checkbox it touches only the setup copied into S.cfg, the badge and, when a change fails, the explanation strip. */
+  (function () {
+    var box = $('optFast'), sending = false, tries = 0;
+    if (!box) return;
+    function sync() { box.checked = !!(S.cfg && S.cfg.profile && S.cfg.profile.name === 'fast'); }
+    (function wait() {                         // the settings arrive a moment after this script has run
+      if (S.cfg) sync(); else if (++tries < 150) setTimeout(wait, 100);
+    })();
+    box.addEventListener('change', function () {
+      if (!S.cfg || sending) { box.checked = !box.checked; return; }     // still loading, or the last change is on its way
+      var old = false;
+      sending = true;
+      fetch('/api/profile', {
+        method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: box.checked ? 'fast' : 'standard' })
+      }).then(function (r) {
+        old = r.status === 404;                // a server started before this switch existed does not know the address
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function (c) {
+        S.cfg.model = c.model; S.cfg.profile = c.profile; setBadge();
+      }).catch(function () {
+        why('Problem', 'alert', old ? 'Faster mode could not be switched: this Sorty server was started before the switch was added. Restart the server and try again.'
+          : 'Faster mode could not be switched: the Sorty server did not answer properly. Is it still running?');
+      }).then(function () { sending = false; sync(); });               // on failure this puts the checkbox back
+    });
+    box.parentNode.addEventListener('click', function (e) {            // after a mouse click, Space stays free for the sensor
+      if (e.detail) setTimeout(function () { box.blur(); }, 0);        // (a click on the words moves the focus a moment later)
+    });
   })();
 
   window.SortyShowcase = { state: function () { return { ready: S.kioskReady, run: S.run && { id: S.run.id, kind: S.run.kind, turns: S.run.turns, over: S.run.over }, base: S.base, poses: S.hasPoses, lit: S.litOk, items: Object.keys(S.items).length, scenarios: S.scenarios.length }; }, start: startRun, cancel: cancelRun };

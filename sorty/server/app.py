@@ -31,6 +31,14 @@ IMAGES_DIR = ROOT / "tests" / "images"
 SCENARIOS_FILE = ROOT / "tests" / "scenarios.json"
 MAX_BODY = 12 * 1024 * 1024
 
+# The two AI setups the showcase can switch between while the server runs (POST /api/profile).
+PROFILES = {
+    "standard": {"label": "Standard", "detail": "Most careful: separate grease check on every second look",
+                 "model": "claude-opus-5-5", "prearm_specialist": True},
+    "fast": {"label": "Faster", "detail": "Faster and about half the cost: grease check only when unsure",
+             "model": "claude-sonnet-5-5", "prearm_specialist": False},
+}
+
 mimetypes.add_type("text/javascript", ".js")
 mimetypes.add_type("text/javascript", ".mjs")
 mimetypes.add_type("image/svg+xml", ".svg")
@@ -50,6 +58,12 @@ class App:
     def __init__(self, force_mock: bool = False) -> None:
         import os
         self.settings = get_settings()
+        # Name the AI setup the environment asked for. The settings stay as they are until a setup is chosen.
+        fast = PROFILES["fast"]
+        if self.settings.model == fast["model"] and self.settings.prearm_specialist == fast["prearm_specialist"]:
+            self.profile = "fast"
+        else:
+            self.profile = "standard" if self.settings.model == PROFILES["standard"]["model"] else "custom"
         self.station = load_station(self.settings.station_id)
         self.scenarios = load_scenarios()
         self._forced_mock = force_mock or os.environ.get("SORTY_MODE", "").lower() == "mock"
@@ -89,7 +103,21 @@ class App:
             "station": {"id": self.station["id"], "name": self.station.get("name", ""), "bins": self.station["bins"]},
             "timeouts": {"answer_s": s.answer_timeout_s, "show_s": s.show_timeout_s, "verdict_hold_s": s.verdict_hold_s},
             "budget": budget.status(),
+            "profile": {"name": self.profile, "options": [
+                {"name": name, "label": p["label"], "detail": p["detail"], "model": p["model"]}
+                for name, p in PROFILES.items()]},
         }
+
+    def set_profile(self, name: str) -> dict:
+        """Switch to one of the named AI setups and return the new config. The live brain reads both
+        settings on every AI call, so no restart is needed; in practice mode the choice waits for the AI."""
+        if not isinstance(name, str) or name not in PROFILES:
+            raise ValueError("profile must be one of: " + ", ".join(PROFILES))
+        setup = PROFILES[name]
+        self.settings.model = setup["model"]
+        self.settings.prearm_specialist = setup["prearm_specialist"]
+        self.profile = name
+        return self.config()
 
     def notify(self, turn: dict) -> None:
         """Tell the bin hardware about a verdict (for example to light the LED of
@@ -251,6 +279,13 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/demo/answer":
                 text = self.app.demo_answer(str(body.get("scenario_id", "")), str(body.get("question", "")))
                 self._json(200, {"text": text})
+            elif path == "/api/profile":
+                try:
+                    cfg = self.app.set_profile(body.get("profile"))
+                except ValueError as exc:
+                    self._json(400, {"error": str(exc)})
+                    return
+                self._json(200, cfg)
             else:
                 self._json(404, {"error": "not found"})
         except Exception as exc:  # never let one bad request take the kiosk down
