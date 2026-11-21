@@ -25,6 +25,19 @@ So the moment the station activates, **two AI models start on the same camera fr
 
 If the fast model is sure, the screen turns red and Sorty says "Stop!" with where the item goes instead, without waiting for the careful answer. If it is not sure it stays silent and the careful model answers as usual, so the alert can only make Sorty faster, never less careful.
 
+Which model raises the alert: Claude Haiku 5.5 by default. With a `JEV_API_KEY` in `sorty/.env`, the alert runs on Jev, TypeSafe AI's decision model (one Choice question over the picture, answered with a confidence), and Claude Haiku stays as the net if Jev cannot be reached. The Jev path is covered by offline checks with a stand-in; see "Tested" for whether it has been run against the real service.
+
+### A multi-agent workflow
+
+Four AI agents, each with one job:
+
+1. **Alert agent** (Claude Haiku 5.5, or Jev): does this wreck a whole load?
+2. **Orchestrator agent** (Claude Opus 5.5, a LangGraph graph): which fact decides the bin, and what is the next move? It can answer, ask the person, ask to see another side, or call one of the next two.
+3. **Inspector agent**: a closer look at a zoomed picture for grease, food or mold, reported on a fixed form.
+4. **Label agent**: reads resin codes, compostable marks and other small print.
+
+Agents 1 and 2 start at the same moment. Agents 3 and 4 run only when the orchestrator calls them.
+
 ## Try it
 
 1. Put your Anthropic API key in `sorty/.env`:
@@ -105,7 +118,7 @@ Results with the live AI on 2026-11-21 (the reports are in `sorty/tests/results/
 
 The one miss is the same in both runs: a paper coffee cup, where Sorty sent the cardboard sleeve to recycling and our answer key says the whole cup is landfill.
 
-Limits: the pictures are Blender renders, not photos from a real bin camera; each figure comes from a single run; each load-wrecker has only one picture; the cheapest model tried as the careful brain skipped the soda-can question; the Gemini path has not been run; and nothing has been tested on a real bin.
+Limits: the pictures are Blender renders, not photos from a real bin camera; each figure comes from a single run; each load-wrecker has only one picture; the cheapest model tried as the careful brain skipped the soda-can question; the Gemini path has not been run; the Jev alert path has been run only against a stand-in, not the real service (the alert figures above are from Claude Haiku 5.5); and nothing has been tested on a real bin.
 
 ```
 cd sorty
@@ -162,7 +175,7 @@ Built at HackJam '26. This section says plainly what was used, what was generate
 | Part | What it uses |
 |---|---|
 | Brain and server | Python 3.13; the official Anthropic Python SDK (`anthropic`) to call the Claude API; LangGraph with `langchain-anthropic` and `langchain-google-genai` for the graph form of the decision loop; Pillow for image handling; Python's standard library web server (no web framework) |
-| AI models inside the product | Claude with vision, by Anthropic: `claude-opus-5-5` decides which bin an item goes in (the Faster mode uses `claude-sonnet-5-5`), and `claude-haiku-5-5` is the instant alert. Google's Gemini (`gemini-3.8-flash`) is supported in code through LangGraph but has not been run yet |
+| AI models inside the product | Claude with vision, by Anthropic: `claude-opus-5-5` decides which bin an item goes in (the Faster mode uses `claude-sonnet-5-5`), and `claude-haiku-5-5` is the instant alert. Google's Gemini (`gemini-3.8-flash`) is supported in code through LangGraph but has not been run yet. TypeSafe AI's Jev (`jev-latest`) is supported in code as the alert model, called over plain HTTPS with no extra package, and has not been run against the real service yet |
 | Screen, voice and virtual prototype | Plain HTML, CSS and JavaScript with no framework and no build step; the browser's Web Speech API (speech synthesis and recognition), Web Audio API and camera API (`getUserMedia`) |
 | 3D design, renders and test pictures | Blender 5.2 (Cycles renderer), driven by Python scripts; FFmpeg to stitch images and encode the turntable video; system fonts |
 | Development | Claude Code (Anthropic's AI coding assistant, running Claude Fable 5.2), Git and GitHub |
